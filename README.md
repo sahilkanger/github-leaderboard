@@ -4,7 +4,9 @@ A spinning-tornado leaderboard of GitHub contributions over the last 12 months, 
 
 The first pass covers the 16 states of the Census South plus Missouri: Alabama, Arkansas, Delaware, Florida, Georgia, Kentucky, Louisiana, Maryland, Mississippi, Missouri, North Carolina, Oklahoma, South Carolina, Tennessee, Texas, Virginia, and West Virginia. The other 33 states are on the map, dimmed, until they are collected.
 
-Open [leaderboard.html](leaderboard.html) in a browser. It is one self-contained file with no network requests.
+**Live:** https://wbp318.github.io/github-leaderboard/ (GitHub Pages, from `main`).
+
+Or open [leaderboard.html](leaderboard.html) in a browser. It is one self-contained file with no network requests.
 
 ## What is on the page
 
