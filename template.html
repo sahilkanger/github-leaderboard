@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>GitHub Contribution Tornado</title>
+<style>
+/* One visual world with the Goin' Postal tornado: a storm at night. */
+:root {
+  color-scheme: dark;
+  --sky: #0b1430;
+  --panel: #121d3d;
+  --line: #24315a;
+  --ink: #e9eef9;
+  --muted: #9aa6c4;
+  --gold: #f2b705;
+  --left: #e66767;
+  --right: #3987e5;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--sky); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+body { padding: 20px clamp(12px, 3vw, 32px) 40px; }
+a { color: #86b6ef; }
+header h1 { margin: 0; font-size: clamp(26px, 4vw, 40px); letter-spacing: 0.01em; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 980px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 16px 0; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.tile .k { color: var(--muted); font-size: 12.5px; }
+.tile .v { font-size: 24px; font-weight: 700; }
+.tile .n { color: var(--muted); font-size: 12px; }
+.tile.me { border-color: var(--gold); }
+section { margin-top: 26px; }
+section > h2 { margin: 0 0 4px; font-size: 21px; }
+section > p.lede { margin: 0 0 12px; color: var(--muted); max-width: 980px; }
+.storm {
+  display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start;
+  background: radial-gradient(ellipse at 50% 0%, #1b2a57 0%, var(--sky) 70%);
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+}
+@media (max-width: 920px) { .storm { grid-template-columns: 1fr; } }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 2px 2px 10px; }
+.lbl { font-size: 12px; color: var(--muted); }
+fieldset.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin: 0; padding: 0; min-inline-size: 0; }
+.seg button, .btn {
+  font: 500 13px system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: transparent;
+  border: 0; padding: 6px 10px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--gold); color: var(--sky); }
+.btn { border: 1px solid var(--line); border-radius: 6px; }
+.btn:hover, .seg button:hover { background: #1d2b55; }
+.seg button[aria-pressed="true"]:hover { background: var(--gold); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+select, input[type="search"] {
+  font: 13px system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+}
+.canvas-box { position: relative; }
+#find { min-width: 230px; }
+canvas { display: block; width: 100%; height: clamp(600px, 78vh, 820px); touch-action: pan-y; }
+.stip {
+  position: absolute; pointer-events: none; display: none; z-index: 3; min-width: 210px; max-width: 300px;
+  background: #0e1836; border: 1px solid var(--gold); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45;
+}
+.stip .t { color: var(--gold); font-weight: 600; margin-bottom: 2px; }
+.stip .r { display: flex; gap: 8px; align-items: center; }
+.stip .r i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; }
+.stip .r b { font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); padding: 8px 2px 2px; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.legend i.dot { width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; }
+aside { display: grid; gap: 10px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.card h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
+.card p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
+.big { font-size: 24px; font-weight: 700; }
+.kv { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); padding: 2px 0; }
+.kv b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.me td { background: rgba(242, 183, 5, 0.12); color: var(--gold); font-weight: 600; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: #1d2b55; }
+td.zero { color: #56618a; }
+td.loc { color: var(--muted); max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+.kv > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.where { color: var(--muted); opacity: 0.85; font-size: 11.5px; margin-left: 6px; }
+.stip .loc { color: var(--muted); font-size: 12px; margin: -2px 0 6px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 14px; }
+#map svg { display: block; width: 100%; height: auto; }
+.note { color: var(--muted); font-size: 12.5px; }
+footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 980px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">GitHub Contribution Tornado</h1>
+  <p id="sub"></p>
+</header>
+<div class="tiles" id="you"></div>
+
+<section id="tornado">
+  <h2>The tornado</h2>
+  <p class="lede">Each ring is a place (or, for one state, a person), the busiest on top. Its red half is public commits; its blue half is every other contribution, including private ones for people who show them on their profile. Dots are the people orbiting it; yours is gold. Click a ring to go down a level.</p>
+  <div class="storm">
+    <div>
+      <div class="bar">
+        <span class="lbl">View</span>
+        <select id="view" aria-label="Which tornado"></select>
+        <button type="button" class="btn" id="up">Up a level</button>
+        <button type="button" class="btn" id="spin">Pause</button>
+        <fieldset class="seg" aria-label="Spin speed">
+          <button type="button" data-speed="0.5" aria-pressed="false">Slow</button>
+          <button type="button" data-speed="1" aria-pressed="true">1×</button>
+          <button type="button" data-speed="2.5" aria-pressed="false">Fast</button>
+        </fieldset>
+        <span class="lbl" id="motion"></span>
+      </div>
+      <div class="canvas-box">
+        <canvas id="cv" role="img" aria-label="A spinning tornado of GitHub contributions; the same numbers are in the tables below."></canvas>
+        <div class="stip" id="stip"></div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><i style="background: var(--left)"></i>Public commits</span>
+        <span><i style="background: var(--right)"></i>Other contributions, including private</span>
+        <span><i class="dot" style="background: var(--gold)"></i>You</span>
+        <span>Widest at the top: the busiest</span>
+      </div>
+    </div>
+    <aside id="side" aria-live="polite"></aside>
+  </div>
+</section>
+
+<section id="lists">
+  <h2>Leaderboards</h2>
+  <p class="lede">Ranked by category, for the whole country, a region, a division, a state, or a Louisiana parish. Your row is gold; if you are outside the top 100, your row is added at the end.</p>
+  <div class="panel">
+    <div class="bar">
+      <span class="lbl">Category</span>
+      <fieldset class="seg" id="cats" aria-label="Category"></fieldset>
+    </div>
+    <div class="bar">
+      <span class="lbl">Where</span>
+      <select id="scope" aria-label="Where"></select>
+      <input type="search" id="find" placeholder="Find a login, name, or place" aria-label="Find a login, name, or place">
+      <span class="lbl" id="count"></span>
+    </div>
+    <div class="scroll"><table id="board"></table></div>
+  </div>
+</section>
+
+<section id="states">
+  <h2>The states</h2>
+  <p class="lede">Click a state on the map or in the table to open its tornado. Map colour: total contributions of the people counted. Dimmed states are not counted yet.</p>
+  <div class="grid2">
+    <div class="panel">
+      <div class="bar">
+        <span class="lbl">Colour by</span>
+        <fieldset class="seg" id="mapby" aria-label="Map colour">
+          <button type="button" data-k="total" aria-pressed="true">Contributions</button>
+          <button type="button" data-k="people" aria-pressed="false">People</button>
+          <button type="button" data-k="average" aria-pressed="false">Average</button>
+        </fieldset>
+      </div>
+      <div id="map" role="img" aria-label="Tile map of the 50 states"></div>
+      <div class="legend" id="mapLegend"></div>
+    </div>
+    <div class="panel">
+      <h4 style="margin: 0 0 8px; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px">Regions and divisions</h4>
+      <div class="scroll"><table id="regions"></table></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top: 14px">
+    <div class="scroll"><table id="stateTable"></table></div>
+  </div>
+</section>
+
+<section id="parishes">
+  <h2>Louisiana, parish by parish</h2>
+  <p class="lede">All 64 parishes. People are placed by the town, city, university, or parish named in their GitHub location; those who wrote only "Louisiana" are under "Parish not given". Louisiana was also searched by city name, so it is covered more deeply than other states.</p>
+  <div class="panel"><div class="scroll"><table id="parishTable"></table></div></div>
+</section>
+
+<footer id="method"></footer>
+
+<script>
+"use strict";
+const D = /*__DATA__*/null;
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => Math.round(n).toLocaleString("en-US");
+const short = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}k` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : `${Math.round(n)}`);
+function h(tag, attrs = {}, kids = []) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") e.textContent = v;
+    else e.setAttribute(k, v);
+  }
+  for (const k of kids) e.appendChild(typeof k === "string" ? document.createTextNode(k) : k);
+  return e;
+}
+
+// ---------------------------------------------------------------- the data
+// P rows: [login, name, state, total, commits, private, prs, reviews, issues, repos, followers, parish]
+const F = { login: 0, name: 1, state: 2, total: 3, commits: 4, private: 5, prs: 6, reviews: 7, issues: 8, repos: 9, followers: 10, parish: 11, fair: 12, location: 13 };
+const CATS = [
+  ["total", "Total contributions"], ["commits", "Public commits"], ["private", "Private contributions"],
+  ["prs", "Pull requests"], ["reviews", "Code reviews"], ["issues", "Issues"], ["repos", "New repositories"], ["followers", "Followers"],
+];
+const STATE = Object.fromEntries(D.states.map((s) => [s.ab, s]));
+const COUNTED = D.states.filter((s) => s.counted);
+const REGIONS = D.regions.map((r) => r.name);
+const SCOPE = D.scopeName.charAt(0).toUpperCase() + D.scopeName.slice(1);
+document.title = `GitHub Contribution Tornado: ${SCOPE}`;
+$("#title").textContent = `GitHub Contribution Tornado: ${SCOPE}`;
+const ME = D.P.find((p) => p[0] === D.viewer) ?? null;
+const fairOrMe = (p) => p[F.fair] === 1 || p[F.login] === D.viewer;
+const inScope = (scope) => {
+  const [kind, val] = scope.split(":");
+  if (kind === "us" || kind === "all") return fairOrMe;
+  if (kind === "region") return (p) => fairOrMe(p) && STATE[p[F.state]].region === val;
+  if (kind === "division") return (p) => fairOrMe(p) && STATE[p[F.state]].division === val;
+  if (kind === "state") return (p) => p[F.state] === val;
+  if (kind === "parish") return (p) => p[F.state] === "LA" && p[F.parish] === (val === "-" ? "" : val);
+  return () => false;
+};
+function ranked(scope, cat) {
+  const k = F[cat];
+  return D.P.filter(inScope(scope)).sort((a, b) => b[k] - a[k] || b[F.total] - a[F.total]);
+}
+const rankOf = (scope, cat = "total") => {
+  if (!ME) return null;
+  const list = ranked(scope, cat);
+  const i = list.findIndex((p) => p[0] === ME[0]);
+  return i < 0 ? null : { rank: i + 1, of: list.length };
+};
+
+// ---------------------------------------------------------------- header and your ranks
+$("#sub").textContent = `The last 12 months of GitHub contributions for ${fmt(D.P.length)} people whose profile places them in ${D.scopeName}. States, divisions and regions are compared on the same ${D.perState} a state (${fmt(D.compared)} people), the likeliest to be busiest; Louisiana's own view and its parishes count everyone active there. Private contributions count for people who show them on their profile. Collected ${D.generated.slice(0, 10)}.`;
+function renderYou() {
+  const box = $("#you");
+  box.textContent = "";
+  if (!ME) {
+    box.appendChild(h("div", { class: "tile" }, [h("div", { class: "k", text: "You" }), h("div", { class: "v", text: "Not found" }), h("div", { class: "n", text: "Your profile location did not match a state" })]));
+    return;
+  }
+  const st = STATE[ME[F.state]];
+  const tiles = [
+    ["Your contributions", fmt(ME[F.total]), `${fmt(ME[F.commits])} public commits · ${fmt(ME[F.private])} private`],
+  ];
+  if (ME[F.parish]) {
+    const r = rankOf(`parish:${ME[F.parish]}`);
+    if (r) tiles.push([`${ME[F.parish]} Parish`, `#${r.rank}`, `of ${fmt(r.of)} counted`]);
+  }
+  for (const [label, scope] of [[st.name, `state:${st.ab}`], [st.division, `division:${st.division}`], [`The ${st.region}`, `region:${st.region}`], [SCOPE, "us"]]) {
+    const r = rankOf(scope);
+    if (r) tiles.push([label, `#${fmt(r.rank)}`, `of ${fmt(r.of)} · top ${Math.max(1, Math.ceil((r.rank / r.of) * 100))}%`]);
+  }
+  tiles.forEach(([k, v, n], i) => box.appendChild(h("div", { class: i === 0 ? "tile me" : "tile" }, [h("div", { class: "k", text: k }), h("div", { class: "v", text: v }), h("div", { class: "n", text: n })])));
+}
+
+// ---------------------------------------------------------------- tornado views
+// A view gives rows: { label, sub, left, right, people (for dots), me, drill, tip }
+const sumRows = (list, label, drill) => ({
+  label, drill,
+  left: list.commits, right: Math.max(0, list.total - list.commits),
+  total: list.total, people: list.people,
+  sub: `${short(list.total)} contributions · ${fmt(list.people)} people`,
+});
+function viewRows(view) {
+  const [kind, val] = view.split(":");
+  if (kind === "all") {
+    return COUNTED.map((s) => ({ ...sumRows(s, s.name, `state:${s.ab}`), me: ME && ME[F.state] === s.ab, tip: s.division }));
+  }
+  if (kind === "us") {
+    return D.divisions.map((d) => ({ ...sumRows(d, d.name, `division:${d.name}`), me: ME && STATE[ME[F.state]].division === d.name, tip: `${d.region}` }));
+  }
+  if (kind === "division") {
+    return COUNTED.filter((s) => s.division === val).map((s) => ({ ...sumRows(s, s.name, `state:${s.ab}`), me: ME && ME[F.state] === s.ab, tip: s.division }));
+  }
+  if (kind === "region") {
+    return COUNTED.filter((s) => s.region === val).map((s) => ({ ...sumRows(s, s.name, `state:${s.ab}`), me: ME && ME[F.state] === s.ab, tip: s.division }));
+  }
+  if (kind === "parish") {
+    return D.parishes.filter((p) => p.people > 0).map((p) => ({ ...sumRows(p, p.name, null), me: ME && ME[F.state] === "LA" && (ME[F.parish] || "Parish not given") === p.name, tip: "Louisiana" }));
+  }
+  // One state: its 12 busiest people, plus you if you live there.
+  const list = ranked(`state:${val}`, "total");
+  const top = list.slice(0, 12);
+  if (ME && ME[F.state] === val && !top.includes(ME)) top.push(ME);
+  return top.map((p) => ({
+    label: p[0], drill: null, me: p === ME, person: p, rank: list.indexOf(p) + 1,
+    left: p[F.commits], right: Math.max(0, p[F.total] - p[F.commits]), total: p[F.total], people: 1,
+    sub: `${short(p[F.total])} contributions${p[F.name] ? ` · ${p[F.name]}` : ""}${p === ME && list.indexOf(p) >= top.length - 1 ? ` · #${fmt(list.indexOf(p) + 1)} of ${fmt(list.length)}` : ""}`,
+  }));
+}
+const viewTitle = (view) => {
+  const [kind, val] = view.split(":");
+  if (kind === "all") return `${SCOPE}, by state`;
+  if (kind === "us") return `${SCOPE}, by division`;
+  if (kind === "region") return `The ${val}, by state`;
+  if (kind === "division") return `${val}, by state`;
+  if (kind === "parish") return "Louisiana, by parish";
+  return `${STATE[val].name}: its busiest people`;
+};
+const parentOf = (view) => {
+  const [kind, val] = view.split(":");
+  if (kind === "region" || kind === "us") return kind === "us" ? null : "all";
+  if (kind === "division") return "us";
+  if (kind === "state") return "all";
+  if (kind === "parish") return "state:LA";
+  return null;
+};
+
+const state = { view: "us", playing: !matchMedia("(prefers-reduced-motion: reduce)").matches, speed: 1, hover: -1 };
+function buildViewSelect() {
+  const sel = $("#view");
+  sel.textContent = "";
+  sel.appendChild(h("option", { value: "all", text: `${SCOPE}, by state` }));
+  sel.appendChild(h("option", { value: "us", text: `${SCOPE}, by division` }));
+  const g1 = h("optgroup", { label: "A region, by state" });
+  for (const r of REGIONS) g1.appendChild(h("option", { value: `region:${r}`, text: `The ${r}` }));
+  sel.appendChild(g1);
+  const g3 = h("optgroup", { label: "A division, by state" });
+  for (const d of D.divisions) g3.appendChild(h("option", { value: `division:${d.name}`, text: d.name }));
+  sel.appendChild(g3);
+  sel.appendChild(h("option", { value: "parish:LA", text: "Louisiana, by parish" }));
+  const g2 = h("optgroup", { label: "A state, by person" });
+  for (const s of [...COUNTED].sort((a, b) => a.name.localeCompare(b.name))) g2.appendChild(h("option", { value: `state:${s.ab}`, text: s.name }));
+  sel.appendChild(g2);
+  sel.value = state.view;
+  sel.addEventListener("change", () => go(sel.value));
+}
+// Room for every ring: the tornado grows taller when a view has many rows (each needs a name and a line under it).
+function fitHeight() {
+  const n = viewRows(state.view).length;
+  const narrow = cv.getBoundingClientRect().width < 700;
+  const need = (narrow ? 112 : 84) + Math.max(0, n - 1) * (narrow ? 28 : 40) + 110;
+  cv.style.height = `max(clamp(600px, 78vh, 820px), ${need}px)`;
+}
+addEventListener("resize", fitHeight);
+function go(view) {
+  state.view = view;
+  $("#view").value = view;
+  fitHeight();
+  $("#up").disabled = !parentOf(view);
+  storm.sig = "";
+  renderSide();
+}
+$("#up").addEventListener("click", () => {
+  const p = parentOf(state.view);
+  if (p) go(p);
+});
+
+// ---------------------------------------------------------------- the storm
+const cv = $("#cv");
+const cx2 = cv.getContext("2d");
+const SKY = "#0b1430";
+const storm = { W: 0, H: 0, dots: [], sig: "", dust: [], unit: 1 };
+for (let i = 0; i < 700; i++) storm.dust.push({ h: Math.random() ** 0.9 * 1.1 - 0.05, a: Math.random() * Math.PI * 2, j: 0.72 + Math.random() * 0.55, l: 0.05 + Math.random() * 0.2 });
+function resize() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const r = cv.getBoundingClientRect();
+  storm.W = r.width;
+  storm.H = r.height;
+  cv.width = Math.round(storm.W * dpr);
+  cv.height = Math.round(storm.H * dpr);
+  cx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function geom() {
+  const rows = viewRows(state.view).sort((a, b) => b.total - a.total);
+  const W = storm.W;
+  const narrow = W < 700;
+  const labelW = narrow ? Math.min(124, W * 0.34) : Math.min(300, W * 0.34);
+  const plotW = W - labelW;
+  const cx = plotW * 0.5;
+  const top = narrow ? 112 : 84;
+  const bot = storm.H - 70;
+  const n = rows.length;
+  const maxHalf = Math.max(1, ...rows.flatMap((r) => [r.left, r.right]));
+  const rMax = Math.max(48, Math.min(cx - (narrow ? 40 : 70), 330));
+  const k = rMax / maxHalf;
+  const step = n > 1 ? (bot - top) / (n - 1) : 0;
+  const tilt = n > 12 ? 0.16 : 0.22;
+  const rings = rows.map((r, i) => {
+    const rL = Math.max(6, r.left * k);
+    const rR = Math.max(6, r.right * k);
+    return { row: r, y: top + step * i, rL, rR, ry: ((rL + rR) / 2) * tilt };
+  });
+  return { rows, rings, cx, top, bot, step, narrow, labelX: plotW + 8, rMax, tilt };
+}
+function funnelAt(G, y) {
+  const R = G.rings;
+  if (!R.length) return { rL: 30, rR: 30 };
+  if (y <= R[0].y) return { rL: R[0].rL, rR: R[0].rR };
+  const last = R[R.length - 1];
+  if (y >= last.y) {
+    const t = Math.min(1, (y - last.y) / 70);
+    return { rL: last.rL * (1 - 0.65 * t) + 4, rR: last.rR * (1 - 0.65 * t) + 4 };
+  }
+  for (let i = 1; i < R.length; i++) {
+    if (y <= R[i].y) {
+      const t = (y - R[i - 1].y) / (R[i].y - R[i - 1].y || 1);
+      return { rL: R[i - 1].rL + (R[i].rL - R[i - 1].rL) * t, rR: R[i - 1].rR + (R[i].rR - R[i - 1].rR) * t };
+    }
+  }
+  return { rL: last.rL, rR: last.rR };
+}
+function syncDots(G) {
+  const sig = `${state.view}|${G.rings.length}`;
+  if (sig === storm.sig) return;
+  storm.sig = sig;
+  const personView = state.view.startsWith("state:");
+  const weight = (r) => (personView ? r.total : r.people);
+  const total = G.rings.reduce((a, g) => a + weight(g.row), 0) || 1;
+  storm.unit = total / 160;
+  storm.dots = [];
+  G.rings.forEach((g, i) => {
+    const n = Math.max(2, Math.min(40, Math.round(weight(g.row) / storm.unit)));
+    for (let j = 0; j < n; j++) storm.dots.push({ ring: i, a: Math.random() * Math.PI * 2, me: false });
+    if (g.row.me) storm.dots.push({ ring: i, a: Math.random() * Math.PI * 2, me: true });
+  });
+}
+function draw(dt) {
+  const { W, H } = storm;
+  if (!W || !H) return;
+  const G = geom();
+  syncDots(G);
+  const c = cx2;
+  c.clearRect(0, 0, W, H);
+  const move = state.playing ? dt * state.speed : 0;
+  const omega = (r) => 0.55 * (G.rMax / Math.max(r, 10)) ** 0.65;
+  const gy = G.bot + 34;
+  const grd = c.createLinearGradient(0, gy - 10, 0, H);
+  grd.addColorStop(0, "rgba(242,183,5,0.10)");
+  grd.addColorStop(1, "rgba(242,183,5,0)");
+  c.fillStyle = grd;
+  c.fillRect(0, gy - 6, W, H - gy + 6);
+  const back = [];
+  const front = [];
+  for (const d of storm.dust) {
+    const y = G.top - 50 + (G.bot - G.top + 100) * d.h;
+    const f = funnelAt(G, y);
+    d.a += omega((f.rL + f.rR) / 2) * move;
+    (Math.sin(d.a) < 0 ? back : front).push(["dust", d, y, f]);
+  }
+  G.rings.forEach((_, i) => {
+    back.push(["ringB", i]);
+    front.push(["ringF", i]);
+  });
+  for (const p of storm.dots) {
+    const g = G.rings[p.ring];
+    if (!g) continue;
+    p.a += omega((g.rL + g.rR) / 2) * move * (p.me ? 0.8 : 1);
+    (Math.sin(p.a) < 0 ? back : front).push(["dot", p]);
+  }
+  const arcs = (g, frontHalf, hot) => {
+    const parts = frontHalf
+      ? [[0, Math.PI / 2, g.rR, "#3987e5"], [Math.PI / 2, Math.PI, g.rL, "#e66767"]]
+      : [[Math.PI, Math.PI * 1.5, g.rL, "rgba(230,103,103,0.28)"], [Math.PI * 1.5, Math.PI * 2, g.rR, "rgba(57,135,229,0.28)"]];
+    for (const [a0, a1, rx, color] of parts) {
+      c.strokeStyle = g.row.me && frontHalf ? (a0 === 0 ? "#5ea3ee" : "#ef8a8a") : color;
+      c.lineWidth = frontHalf ? (hot ? 3.5 : g.row.me ? 2.6 : 2) : hot ? 2 : 1;
+      c.beginPath();
+      c.ellipse(G.cx, g.y, rx, g.ry, 0, a0, a1);
+      c.stroke();
+    }
+  };
+  const paint = (list) => {
+    for (const e of list) {
+      if (e[0] === "dust") {
+        const [, d, y, f] = e;
+        const z = Math.sin(d.a);
+        const r1 = (Math.cos(d.a) < 0 ? f.rL : f.rR) * d.j + 6;
+        const a2 = d.a - d.l;
+        const r2 = (Math.cos(a2) < 0 ? f.rL : f.rR) * d.j + 6;
+        const left = Math.cos(d.a) < 0;
+        c.strokeStyle = z < 0 ? (left ? "rgba(240,170,170,0.09)" : "rgba(170,200,245,0.09)") : left ? "rgba(246,196,196,0.24)" : "rgba(200,222,250,0.24)";
+        c.lineWidth = z < 0 ? 1 : 1.4;
+        c.beginPath();
+        c.moveTo(G.cx + r2 * Math.cos(a2), y + r2 * G.tilt * Math.sin(a2));
+        c.lineTo(G.cx + r1 * Math.cos(d.a), y + r1 * G.tilt * z);
+        c.stroke();
+      } else if (e[0] === "ringB" || e[0] === "ringF") {
+        arcs(G.rings[e[1]], e[0] === "ringF", state.hover === e[1]);
+      } else {
+        const p = e[1];
+        const g = G.rings[p.ring];
+        const z = Math.sin(p.a);
+        const r = Math.cos(p.a) < 0 ? g.rL : g.rR;
+        const x = G.cx + r * Math.cos(p.a);
+        const y = g.y + g.ry * z;
+        c.globalAlpha = z < 0 ? (p.me ? 0.75 : 0.45) : 1;
+        c.fillStyle = p.me ? "#f2b705" : Math.cos(p.a) < 0 ? "#e66767" : "#3987e5";
+        c.beginPath();
+        c.arc(x, y, p.me ? (z < 0 ? 5 : 6.5) : z < 0 ? 2.8 : 3.8, 0, Math.PI * 2);
+        c.fill();
+        c.lineWidth = 2;
+        c.strokeStyle = SKY;
+        c.stroke();
+        if (p.me && z >= 0) {
+          c.lineWidth = 1.2;
+          c.strokeStyle = "#f2b705";
+          c.beginPath();
+          c.arc(x, y, 10, 0, Math.PI * 2);
+          c.stroke();
+        }
+        c.globalAlpha = 1;
+      }
+    }
+  };
+  paint(back);
+  const beam = c.createLinearGradient(0, G.top - 40, 0, G.bot + 40);
+  beam.addColorStop(0, "rgba(242,183,5,0.08)");
+  beam.addColorStop(1, "rgba(242,183,5,0.24)");
+  c.fillStyle = beam;
+  c.beginPath();
+  c.moveTo(G.cx - 9, G.top - 40);
+  c.lineTo(G.cx + 9, G.top - 40);
+  c.lineTo(G.cx + 4, G.bot + 34);
+  c.lineTo(G.cx - 4, G.bot + 34);
+  c.closePath();
+  c.fill();
+  paint(front);
+  const font = (w, px) => `${w} ${px}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
+  c.textAlign = "center";
+  c.fillStyle = "#f2b705";
+  c.font = font(700, 16);
+  c.fillText(viewTitle(state.view).toUpperCase(), G.narrow ? storm.W / 2 : G.cx, G.top - 56);
+  c.fillStyle = "#9aa6c4";
+  c.font = font(400, 12);
+  c.fillText("public commits  ·  everything else", G.narrow ? storm.W / 2 : G.cx, G.top - 40);
+  c.fillText("widest at the top: the busiest", G.narrow ? storm.W / 2 : G.cx, G.bot + 56);
+  G.rings.forEach((g, i) => {
+    const r = g.row;
+    c.font = font(600, 12);
+    c.fillStyle = "#e9eef9";
+    c.textAlign = "right";
+    c.fillText(short(r.left), G.cx - g.rL - 8, g.y + 4);
+    c.textAlign = "left";
+    c.fillText(short(r.right), G.cx + g.rR + 8, G.narrow ? g.y + 4 : g.y - 5);
+    const name = `${r.rank ?? i + 1}  ${r.label.toUpperCase()}${r.me && !r.person ? "  ★" : ""}`;
+    if (G.narrow) {
+      const lx = G.labelX;
+      c.strokeStyle = r.me ? "rgba(242,183,5,0.7)" : "rgba(242,183,5,0.25)";
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(G.cx + g.rR + 4, g.y);
+      c.lineTo(lx - 4, g.y);
+      c.stroke();
+      c.textAlign = "left";
+      c.font = font(700, 10.5);
+      c.fillStyle = r.me || state.hover === i ? "#f2b705" : "#e9eef9";
+      let text = name;
+      const room = storm.W - lx - 4;
+      while (text.length > 4 && c.measureText(text).width > room) text = text.slice(0, -1);
+      c.fillText(text === name ? text : `${text.slice(0, -1)}…`, lx, g.y + 4);
+    } else {
+      const lx = G.labelX;
+      c.strokeStyle = r.me ? "rgba(242,183,5,0.7)" : "rgba(242,183,5,0.3)";
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(G.cx + g.rR + 4, g.y);
+      c.lineTo(lx - 6, g.y);
+      c.stroke();
+      c.textAlign = "left";
+      c.font = font(700, 13);
+      c.fillStyle = r.me || state.hover === i ? "#f2b705" : "#e9eef9";
+      c.fillText(name, lx, g.y + 4);
+      const where = r.person?.[F.location];
+      if (where) {
+        const x = lx + c.measureText(name).width + 10;
+        c.font = font(400, 11.5);
+        c.fillStyle = "#8fa0c8";
+        let text = where;
+        const room = storm.W - x - 6;
+        while (text.length > 3 && c.measureText(text).width > room) text = text.slice(0, -1);
+        if (room > 30) c.fillText(text === where ? text : `${text.slice(0, -1)}…`, x, g.y + 4);
+      }
+      c.font = font(400, 11.5);
+      c.fillStyle = "#9aa6c4";
+      c.fillText(r.sub.length > 46 ? `${r.sub.slice(0, 45)}…` : r.sub, lx, g.y + 18);
+    }
+  });
+}
+function nearest(e) {
+  const box = cv.getBoundingClientRect();
+  const y = e.clientY - box.top;
+  const G = geom();
+  let best = -1;
+  let bd = Infinity;
+  G.rings.forEach((g, i) => {
+    const d = Math.abs(y - g.y);
+    if (d < bd) {
+      bd = d;
+      best = i;
+    }
+  });
+  return best >= 0 && bd <= Math.max(16, G.step / 2) ? { G, i: best, x: e.clientX - box.left, y } : null;
+}
+const stip = $("#stip");
+cv.addEventListener("pointermove", (e) => {
+  const n = nearest(e);
+  if (!n) {
+    state.hover = -1;
+    stip.style.display = "none";
+    cv.style.cursor = "default";
+    return;
+  }
+  state.hover = n.i;
+  const r = n.G.rings[n.i].row;
+  cv.style.cursor = r.drill ? "pointer" : "default";
+  stip.textContent = "";
+  stip.appendChild(h("div", { class: "t", text: r.person ? `${r.label}${r.person[F.name] ? ` (${r.person[F.name]})` : ""}` : r.label }));
+  if (r.person?.[F.location]) stip.appendChild(h("div", { class: "loc", text: r.person[F.location] }));
+  const rows = [
+    ["#3987e5", fmt(r.total), "contributions in all"],
+    ["#e66767", fmt(r.left), "public commits"],
+    [null, fmt(r.right), "everything else"],
+  ];
+  if (r.person) {
+    const p = r.person;
+    rows.push([null, fmt(p[F.private]), "private"], [null, `${fmt(p[F.prs])} · ${fmt(p[F.reviews])} · ${fmt(p[F.issues])}`, "PRs · reviews · issues"]);
+  } else {
+    rows.push([null, fmt(r.people), "people counted"]);
+  }
+  for (const [color, v, label] of rows) {
+    const row = h("div", { class: "r" });
+    if (color) {
+      const k = h("i");
+      k.style.background = color;
+      row.appendChild(k);
+    }
+    row.appendChild(h("b", { text: v }));
+    row.appendChild(h("span", { text: label }));
+    stip.appendChild(row);
+  }
+  if (r.drill) stip.appendChild(h("div", { class: "r", text: "Click to open it" }));
+  stip.style.display = "block";
+  stip.style.left = `${Math.min(n.x + 16, storm.W - stip.offsetWidth - 6)}px`;
+  stip.style.top = `${Math.min(n.y + 16, storm.H - stip.offsetHeight - 6)}px`;
+});
+cv.addEventListener("pointerleave", () => {
+  state.hover = -1;
+  stip.style.display = "none";
+});
+cv.addEventListener("click", (e) => {
+  const n = nearest(e);
+  if (!n) return;
+  const r = n.G.rings[n.i].row;
+  if (r.drill) go(r.drill);
+  else if (r.person) window.open(`https://github.com/${r.person[0]}`, "_blank", "noopener");
+});
+$("#spin").addEventListener("click", () => {
+  state.playing = !state.playing;
+  $("#spin").textContent = state.playing ? "Pause" : "Play";
+  $("#motion").textContent = "";
+});
+for (const b of document.querySelectorAll("[data-speed]")) {
+  b.addEventListener("click", () => {
+    state.speed = Number(b.dataset.speed);
+    for (const o of document.querySelectorAll("[data-speed]")) o.setAttribute("aria-pressed", String(o === b));
+    state.playing = true;
+    $("#spin").textContent = "Pause";
+  });
+}
+if (!state.playing) {
+  $("#spin").textContent = "Play";
+  $("#motion").textContent = "Paused because your system asks for reduced motion.";
+}
+
+function renderSide() {
+  const side = $("#side");
+  side.textContent = "";
+  const card = (title, kids) => h("div", { class: "card" }, [h("h4", { text: title }), ...kids]);
+  const kv = (k, v) => h("div", { class: "kv" }, [h("span", { text: k }), h("b", { text: v })]);
+  const [kind, val] = state.view.split(":");
+  const scope = kind === "parish" ? "state:LA" : state.view;
+  const agg = kind === "us" || kind === "all" ? D.us : kind === "region" ? D.regions.find((r) => r.name === val) : kind === "division" ? D.divisions.find((d) => d.name === val) : STATE[kind === "parish" ? "LA" : val].all;
+  side.appendChild(card(viewTitle(state.view), [
+    h("div", { class: "big", text: fmt(agg.total) }),
+    h("p", { text: "contributions in the last 12 months" }),
+    kv("People counted", fmt(agg.people)),
+    kv("Public commits", fmt(agg.commits)),
+    kv("Private contributions", fmt(agg.private)),
+    kv("Average a person", fmt(agg.average)),
+  ]));
+  const top = ranked(scope, "total").slice(0, 5);
+  side.appendChild(card("Busiest here", top.map((p, i) => h("div", { class: "kv" }, [h("span", { title: p[F.location] || "" }, [`${i + 1}. ${p[0]}`, ...(p[F.location] ? [h("span", { class: "where", text: p[F.location] })] : [])]), h("b", { text: fmt(p[F.total]) })]))));
+  const r = rankOf(scope);
+  if (r) side.appendChild(card("You", [kv("Your rank here", `#${fmt(r.rank)} of ${fmt(r.of)}`), kv("Your contributions", fmt(ME[F.total]))]));
+}
+
+// ---------------------------------------------------------------- leaderboards
+let cat = "total";
+function buildLists() {
+  const cats = $("#cats");
+  for (const [k, label] of CATS) {
+    const b = h("button", { type: "button", "aria-pressed": String(k === cat), text: label });
+    b.addEventListener("click", () => {
+      cat = k;
+      for (const o of cats.querySelectorAll("button")) o.setAttribute("aria-pressed", String(o === b));
+      renderBoard();
+    });
+    cats.appendChild(b);
+  }
+  const sel = $("#scope");
+  sel.appendChild(h("option", { value: "us", text: `All counted: ${SCOPE}` }));
+  const g = (label, items) => {
+    const og = h("optgroup", { label });
+    for (const [v, t] of items) og.appendChild(h("option", { value: v, text: t }));
+    sel.appendChild(og);
+  };
+  g("Regions", REGIONS.map((r) => [`region:${r}`, r]));
+  g("Divisions", D.divisions.map((d) => [`division:${d.name}`, d.name]));
+  g("States", [...COUNTED].sort((a, b) => a.name.localeCompare(b.name)).map((s) => [`state:${s.ab}`, s.name]));
+  g("Louisiana parishes", D.parishes.filter((p) => p.people > 0).map((p) => [`parish:${p.name === "Parish not given" ? "-" : p.name}`, p.name]));
+  sel.value = "us";
+  sel.addEventListener("change", renderBoard);
+  $("#find").addEventListener("input", renderBoard);
+}
+function renderBoard() {
+  const scope = $("#scope").value;
+  const k = F[cat];
+  const list = ranked(scope, cat);
+  const q = $("#find").value.trim().toLowerCase();
+  const t = $("#board");
+  t.textContent = "";
+  t.appendChild(h("thead", {}, [h("tr", {}, [h("th", { class: "num", text: "#" }), h("th", { text: "Login" }), h("th", { text: "Location" }), h("th", { text: "Name" }), h("th", { text: "State" }), h("th", { text: "Parish" }), h("th", { class: "num", text: CATS.find((c) => c[0] === cat)[1] }), h("th", { class: "num", text: "Total" })])]));
+  const tb = h("tbody");
+  const row = (p, i) => {
+    const tr = h("tr", { class: p === ME ? "me" : "" }, [
+      h("td", { class: "num", text: fmt(i + 1) }),
+      h("td", {}, [h("a", { href: `https://github.com/${p[0]}`, target: "_blank", rel: "noopener", text: p[0] })]),
+      h("td", { class: "loc", title: p[F.location] || "", text: p[F.location] || "" }),
+      h("td", { text: p[F.name] || "" }),
+      h("td", { text: STATE[p[F.state]].name }),
+      h("td", { text: p[F.state] === "LA" ? p[F.parish] || "not given" : "" }),
+      h("td", { class: "num", text: fmt(p[k]) }),
+      h("td", { class: "num", text: fmt(p[F.total]) }),
+    ]);
+    tb.appendChild(tr);
+  };
+  const shown = q ? list.map((p, i) => [p, i]).filter(([p]) => p[0].toLowerCase().includes(q) || (p[F.name] || "").toLowerCase().includes(q) || (p[F.location] || "").toLowerCase().includes(q)).slice(0, 100) : list.slice(0, 100).map((p, i) => [p, i]);
+  for (const [p, i] of shown) row(p, i);
+  if (!q && ME) {
+    const i = list.indexOf(ME);
+    if (i >= 100) row(ME, i);
+  }
+  t.appendChild(tb);
+  $("#count").textContent = `${fmt(list.length)} people here`;
+}
+
+// ---------------------------------------------------------------- tables
+function sortable(table, cols, rows, onClick) {
+  let key = cols.findIndex((c) => c.sort) ?? 0;
+  let dir = -1;
+  const render = () => {
+    table.textContent = "";
+    const tr = h("tr");
+    cols.forEach((c, i) => {
+      const th = h("th", { class: c.num ? "num" : "", text: c.label + (i === key ? (dir < 0 ? " ▾" : " ▴") : "") });
+      th.addEventListener("click", () => {
+        if (key === i) dir = -dir;
+        else {
+          key = i;
+          dir = c.num ? -1 : 1;
+        }
+        render();
+      });
+      tr.appendChild(th);
+    });
+    table.appendChild(h("thead", {}, [tr]));
+    const tb = h("tbody");
+    const sorted = [...rows].sort((a, b) => {
+      const x = cols[key].get(a);
+      const y = cols[key].get(b);
+      return (typeof x === "number" ? x - y : String(x).localeCompare(String(y))) * dir;
+    });
+    for (const r of sorted) {
+      const row = h("tr", { class: `${onClick ? "click" : ""}${r.me ? " me" : ""}` });
+      for (const c of cols) {
+        const v = c.get(r);
+        row.appendChild(h("td", { class: `${c.num ? "num" : ""}${c.num && v === 0 ? " zero" : ""}`, text: c.fmt ? c.fmt(v, r) : v }));
+      }
+      if (onClick) row.addEventListener("click", () => onClick(r));
+      tb.appendChild(row);
+    }
+    table.appendChild(tb);
+  };
+  render();
+}
+const topCell = { label: "Busiest", get: (r) => r.top?.login ?? "", fmt: (v, r) => (r.top ? `${r.top.login} (${fmt(r.top.total)})` : "") };
+function renderTables() {
+  const meState = ME?.[F.state];
+  sortable(
+    $("#stateTable"),
+    [
+      { label: "State", get: (r) => r.name },
+      { label: "Region", get: (r) => r.region },
+      { label: "Division", get: (r) => r.division },
+      { label: "People counted", get: (r) => r.people, num: true, fmt },
+      { label: "Contributions", get: (r) => r.total, num: true, fmt, sort: true },
+      { label: "Average", get: (r) => r.average, num: true, fmt },
+      { label: "Median", get: (r) => r.median, num: true, fmt },
+      { label: "Public commits", get: (r) => r.commits, num: true, fmt },
+      { label: "Private", get: (r) => r.private, num: true, fmt },
+      { label: "On GitHub", get: (r) => r.listing, num: true, fmt },
+      topCell,
+    ],
+    COUNTED.map((s) => ({ ...s, me: s.ab === meState })),
+    (r) => {
+      go(`state:${r.ab}`);
+      $("#tornado").scrollIntoView({ behavior: "smooth" });
+    },
+  );
+  const rows = [
+    ...D.regions.map((r) => ({ ...r, kind: "Region", sortName: r.name })),
+    ...D.divisions.map((d) => ({ ...d, kind: `Division, ${d.region}`, sortName: `${d.region} ${d.name}` })),
+  ];
+  sortable(
+    $("#regions"),
+    [
+      { label: "Name", get: (r) => r.name },
+      { label: "Kind", get: (r) => r.kind },
+      { label: "People", get: (r) => r.people, num: true, fmt },
+      { label: "Contributions", get: (r) => r.total, num: true, fmt, sort: true },
+      { label: "Average", get: (r) => r.average, num: true, fmt },
+    ],
+    rows,
+    (r) => {
+      go(r.kind === "Region" ? `region:${r.name}` : `division:${r.name}`);
+      $("#tornado").scrollIntoView({ behavior: "smooth" });
+    },
+  );
+  const myParish = ME && ME[F.state] === "LA" ? ME[F.parish] || "Parish not given" : null;
+  sortable(
+    $("#parishTable"),
+    [
+      { label: "Parish", get: (r) => r.name },
+      { label: "People counted", get: (r) => r.people, num: true, fmt },
+      { label: "Contributions", get: (r) => r.total, num: true, fmt, sort: true },
+      { label: "Average", get: (r) => r.average, num: true, fmt },
+      { label: "Public commits", get: (r) => r.commits, num: true, fmt },
+      { label: "Private", get: (r) => r.private, num: true, fmt },
+      topCell,
+    ],
+    D.parishes.map((p) => ({ ...p, me: p.name === myParish })),
+    (r) => {
+      $("#scope").value = `parish:${r.name === "Parish not given" ? "-" : r.name}`;
+      renderBoard();
+      $("#lists").scrollIntoView({ behavior: "smooth" });
+    },
+  );
+}
+
+// ---------------------------------------------------------------- the tile map
+const TILES = {
+  AK: [0, 0], ME: [0, 11], VT: [1, 10], NH: [1, 11],
+  WA: [2, 1], ID: [2, 2], MT: [2, 3], ND: [2, 4], MN: [2, 5], IL: [2, 6], WI: [2, 7], MI: [2, 8], NY: [2, 9], RI: [2, 10], MA: [2, 11],
+  OR: [3, 1], NV: [3, 2], WY: [3, 3], SD: [3, 4], IA: [3, 5], IN: [3, 6], OH: [3, 7], PA: [3, 8], NJ: [3, 9], CT: [3, 10],
+  CA: [4, 1], UT: [4, 2], CO: [4, 3], NE: [4, 4], MO: [4, 5], KY: [4, 6], WV: [4, 7], VA: [4, 8], MD: [4, 9], DE: [4, 10],
+  AZ: [5, 2], NM: [5, 3], KS: [5, 4], AR: [5, 5], TN: [5, 6], NC: [5, 7], SC: [5, 8],
+  OK: [6, 4], LA: [6, 5], MS: [6, 6], AL: [6, 7], GA: [6, 8],
+  HI: [7, 0], TX: [7, 4], FL: [7, 9],
+};
+// Dark surface: brighter means more (sequential blue, one hue).
+const RAMP = ["#184f95", "#1c5cab", "#256abf", "#2a78d6", "#5598e7", "#86b6ef", "#cde2fb"];
+let mapBy = "total";
+function renderMap() {
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const box = $("#map");
+  box.textContent = "";
+  const size = 46;
+  const gap = 4;
+  const svg = document.createElementNS(SVGNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${12 * (size + gap)} ${8 * (size + gap)}`);
+  const vals = COUNTED.map((s) => s[mapBy]).sort((a, b) => a - b);
+  const q = (v) => {
+    const i = vals.findIndex((x) => x >= v);
+    return Math.min(RAMP.length - 1, Math.floor((i / vals.length) * RAMP.length));
+  };
+  for (const s of D.states) {
+    const [r, c] = TILES[s.ab];
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("tabindex", "0");
+    g.style.cursor = "pointer";
+    const rect = document.createElementNS(SVGNS, "rect");
+    const bin = s.counted ? q(s[mapBy]) : -1;
+    Object.entries({ x: c * (size + gap), y: r * (size + gap), width: size, height: size, rx: 6, fill: s.counted ? RAMP[bin] : "#1a2547" }).forEach(([k, v]) => rect.setAttribute(k, v));
+    if (ME && ME[F.state] === s.ab) {
+      rect.setAttribute("stroke", "#f2b705");
+      rect.setAttribute("stroke-width", "3");
+    }
+    const t = document.createElementNS(SVGNS, "text");
+    Object.entries({ x: c * (size + gap) + size / 2, y: r * (size + gap) + size / 2 + 5, "text-anchor": "middle", "font-size": "14", "font-weight": "700", fill: !s.counted ? "#56618a" : bin >= 5 ? "#0b1430" : "#ffffff" }).forEach(([k, v]) => t.setAttribute(k, v));
+    t.textContent = s.ab;
+    const title = document.createElementNS(SVGNS, "title");
+    title.textContent = s.counted ? `${s.name}: ${fmt(s.total)} contributions, ${fmt(s.people)} people, ${fmt(s.average)} average` : `${s.name}: not counted yet`;
+    g.append(title, rect, t);
+    if (!s.counted) {
+      g.style.cursor = "default";
+      svg.appendChild(g);
+      continue;
+    }
+    g.addEventListener("click", () => {
+      go(`state:${s.ab}`);
+      $("#tornado").scrollIntoView({ behavior: "smooth" });
+    });
+    svg.appendChild(g);
+  }
+  box.appendChild(svg);
+  const leg = $("#mapLegend");
+  leg.textContent = "";
+  leg.appendChild(h("span", { text: "Fewer" }));
+  for (const c of RAMP) {
+    const i = h("i");
+    i.style.background = c;
+    i.style.width = "22px";
+    i.style.height = "10px";
+    leg.appendChild(i);
+  }
+  leg.appendChild(h("span", { text: "More (each shade is a seventh of the states)" }));
+}
+for (const b of document.querySelectorAll("#mapby button")) {
+  b.addEventListener("click", () => {
+    mapBy = b.dataset.k;
+    for (const o of document.querySelectorAll("#mapby button")) o.setAttribute("aria-pressed", String(o === b));
+    renderMap();
+  });
+}
+
+// ---------------------------------------------------------------- method
+$("#method").textContent = `How this was made: GitHub's search found users whose profile location names a state in ${D.scopeName} (its full name, or "City, ST"), the top few hundred per state by followers and by number of repositories, plus Louisiana by city name. Of those who pushed code in the last year, up to ${D.perState} a state with the most public repositories and followers (and everyone in Louisiana) had their contributions looked up, so very active people who work mostly in private can be missed. Each person's last 12 months of contributions came from GitHub's API. People are placed by what their profile says; locations that are ambiguous (Georgia the country, Washington DC) are left out. It is a sample of each state's most visible GitHub users, not a census: ${fmt(D.candidates)} search results, ${fmt(D.fetched)} people looked up, ${fmt(D.P.length)} placed in a state.`;
+
+// ---------------------------------------------------------------- start
+buildViewSelect();
+buildLists();
+renderYou();
+renderBoard();
+renderTables();
+renderMap();
+go("all");
+new ResizeObserver(resize).observe(cv);
+resize();
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  const r = cv.getBoundingClientRect();
+  if (r.bottom < -40 || r.top > innerHeight + 40) return;
+  try {
+    if (Math.abs(r.width - storm.W) > 0.5 || Math.abs(r.height - storm.H) > 0.5) resize();
+    draw(dt);
+  } catch (e) {
+    console.error(e);
+  }
+}
+draw(0);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
