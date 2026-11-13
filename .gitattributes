@@ -1,1 +1,5 @@
 * text=auto eol=lf
+
+# Language stats
+*.md      linguist-detectable=true linguist-documentation=false
+docs/**   linguist-documentation=false
