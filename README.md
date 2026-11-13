@@ -36,7 +36,7 @@ A year of GitHub contributions across the United States, drawn as a spinning tor
 ## What is on the page
 
 - **The tornado.** Each ring is a place, the busiest at the top. Its red half is public commits; its blue half is everything else: pull requests, reviews, issues, new repositories, and private contributions for people who show them. Click a ring to go down a level, from divisions to states to a state's busiest people.
-- **Find yourself.** Type your GitHub login to see your ranks in your parish, state, division, region, and the country, with you in gold in the tornado, the lists, and the map. `?me=<login>` links straight to anyone's ranks.
+- **Find yourself.** Type your GitHub login to see your ranks in your parish, state, division, region, and the country, with you in gold in the tornado, the lists, and the map. `?me=<login>` links straight to anyone's ranks. Open any other state to see where you would rank there, and the states table shows your rank in all 50 at once.
 - **Add yourself.** Not on it? The **Add me** button opens a one-click issue; [a bot](https://github.com/wbp318/github-leaderboard/blob/main/.github/workflows/add-me.yml) checks your profile location, adds you, and replies with a link to your ranks in a few minutes. You are refreshed daily after that.
 - **Leaderboards** in eight categories (total, public commits, private, pull requests, reviews, issues, new repositories, followers) for any state, division, region, or Louisiana parish, with each person's location. Search by login, name, or place.
 - **A map** of all 50 states, coloured by contributions, people counted, or average.

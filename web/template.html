@@ -183,7 +183,7 @@ footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 98
 
 <section id="states">
   <h2>The states</h2>
-  <p class="lede">Click a state on the map or in the table to open its tornado. Map colour: total contributions of the people counted.<span id="uncounted"> Dimmed states are not counted yet.</span></p>
+  <p class="lede">Click a state on the map or in the table to open its tornado. Map colour: total contributions of the people counted.<span id="uncounted"> Dimmed states are not counted yet.</span> Find yourself above and "Your rank there" shows where you would place among the 80 people compared in every state.</p>
   <div class="grid2">
     <div class="panel">
       <div class="bar">
@@ -261,6 +261,13 @@ function ranked(scope, cat) {
   const k = F[cat];
   return D.P.filter(inScope(scope)).sort((a, b) => b[k] - a[k] || b[F.total] - a[F.total]);
 }
+// Where your total would place you in a state, among the people every state is compared on (its
+// sample of D.perState), so the answer means the same in every state, your own included.
+function wouldRank(ab) {
+  if (!ME) return null;
+  const pool = D.P.filter((p) => p[F.state] === ab && p[F.fair] === 1 && p !== ME);
+  return { rank: pool.filter((p) => p[F.total] > ME[F.total]).length + 1, of: pool.length + 1, home: ME[F.state] === ab };
+}
 const rankOf = (scope, cat = "total") => {
   if (!ME) return null;
   const list = ranked(scope, cat);
@@ -314,15 +321,25 @@ function viewRows(view) {
   if (kind === "parish") {
     return D.parishes.filter((p) => p.people > 0).map((p) => ({ ...sumRows(p, p.name, null), me: ME && ME[F.state] === "LA" && (ME[F.parish] || "Parish not given") === p.name, tip: "Louisiana" }));
   }
-  // One state: its 12 busiest people, plus you if you live there.
+  // One state: its 12 busiest people, plus you: where you are if you live there, and where you
+  // would be if you did not.
   const list = ranked(`state:${val}`, "total");
   const top = list.slice(0, 12);
   if (ME && ME[F.state] === val && !top.includes(ME)) top.push(ME);
-  return top.map((p) => ({
+  const ghost = [];
+  if (ME && ME[F.state] !== val) {
+    const w = wouldRank(val);
+    ghost.push({
+      label: `${ME[F.login]} (if here)`, drill: null, me: true, person: ME, rank: w.rank,
+      left: ME[F.commits], right: Math.max(0, ME[F.total] - ME[F.commits]), total: ME[F.total], people: 1,
+      sub: `${short(ME[F.total])} contributions · you would be #${fmt(w.rank)} of ${fmt(w.of)} here`,
+    });
+  }
+  return [...top.map((p) => ({
     label: p[0], drill: null, me: p === ME, person: p, rank: list.indexOf(p) + 1,
     left: p[F.commits], right: Math.max(0, p[F.total] - p[F.commits]), total: p[F.total], people: 1,
     sub: `${short(p[F.total])} contributions${p[F.name] ? ` · ${p[F.name]}` : ""}${p === ME && list.indexOf(p) >= top.length - 1 ? ` · #${fmt(list.indexOf(p) + 1)} of ${fmt(list.length)}` : ""}`,
-  }));
+  })), ...ghost];
 }
 const viewTitle = (view) => {
   const [kind, val] = view.split(":");
@@ -718,7 +735,18 @@ function renderSide() {
   const top = ranked(scope, "total").slice(0, 5);
   side.appendChild(card("Busiest here", top.map((p, i) => h("div", { class: "kv" }, [h("span", { title: p[F.location] || "" }, [`${i + 1}. ${p[0]}`, ...(p[F.location] ? [h("span", { class: "where", text: p[F.location] })] : [])]), h("b", { text: fmt(p[F.total]) })]))));
   const r = rankOf(scope);
-  if (r) side.appendChild(card("You", [kv("Your rank here", `#${fmt(r.rank)} of ${fmt(r.of)}`), kv("Your contributions", fmt(ME[F.total]))]));
+  if (r) {
+    side.appendChild(card("You", [kv("Your rank here", `#${fmt(r.rank)} of ${fmt(r.of)}`), kv("Your contributions", fmt(ME[F.total]))]));
+  } else if (ME && kind === "state") {
+    const w = wouldRank(val);
+    const home = wouldRank(ME[F.state]);
+    side.appendChild(card("You, if you lived here", [
+      kv(`In ${STATE[val].name}`, `#${fmt(w.rank)} of ${fmt(w.of)}`),
+      kv(`In ${STATE[ME[F.state]].name} (home)`, `#${fmt(home.rank)} of ${fmt(home.of)}`),
+      kv("Your contributions", fmt(ME[F.total])),
+      h("p", { class: "note", text: `Both among the ${D.perState} people each state is compared on.` }),
+    ]));
+  }
 }
 
 // ---------------------------------------------------------------- leaderboards
@@ -794,7 +822,7 @@ function sortable(table, cols, rows, onClick) {
         if (key === i) dir = -dir;
         else {
           key = i;
-          dir = c.num ? -1 : 1;
+          dir = c.asc ? 1 : c.num ? -1 : 1;
         }
         render();
       });
@@ -836,6 +864,7 @@ function renderTables() {
       { label: "Public commits", get: (r) => r.commits, num: true, fmt },
       { label: "Private", get: (r) => r.private, num: true, fmt },
       { label: "On GitHub", get: (r) => r.listing, num: true, fmt },
+      ...(ME ? [{ label: "Your rank there", asc: true, get: (r) => wouldRank(r.ab).rank, num: true, fmt: (v, r) => `#${fmt(v)} of ${fmt(wouldRank(r.ab).of)}${r.ab === ME[F.state] ? " (home)" : ""}` }] : []),
       topCell,
     ],
     COUNTED.map((s) => ({ ...s, me: s.ab === meState })),
