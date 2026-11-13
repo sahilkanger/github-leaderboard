@@ -32,6 +32,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      issues: read
     env:
       COLLECT: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.collect) }}
     steps:
@@ -49,6 +50,15 @@ jobs:
           mkdir -p data
           if git fetch --depth=1 origin data; then git archive FETCH_HEAD data | tar -x; fi
           ls -la data
+
+      # People who added themselves: the authors of issues labelled "added" (see add-me.yml).
+      - name: List the people who added themselves
+        if: env.COLLECT == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue list --repo "$GITHUB_REPOSITORY" --label added --state all --limit 5000 --json author --jq '.[].author.login' > data/added.txt
+          wc -l < data/added.txt
 
       - name: Collect from GitHub
         if: env.COLLECT == 'true'

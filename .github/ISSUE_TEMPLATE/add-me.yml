@@ -1,0 +1,15 @@
+name: Add me to the leaderboard
+description: Not on the leaderboard? Add yourself. A bot replies with a link to your ranks in a few minutes.
+title: "Add me"
+labels: [add-me]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Just press **Create**. The bot adds whoever opens this issue, so be signed in as yourself; nobody can add someone else.
+
+        It places you by the location on [your GitHub profile](https://github.com/settings/profile), which must name a US state (for example `Austin, TX`, `Raleigh, North Carolina`, or `Louisiana`). Then it looks up your last year of contributions, adds you, and replies here with a link to your ranks. You are refreshed daily after that.
+  - type: textarea
+    id: note
+    attributes:
+      label: Anything you'd like to say (optional)

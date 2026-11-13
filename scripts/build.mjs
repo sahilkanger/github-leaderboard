@@ -6,6 +6,7 @@
 //   SCOPE=LA,MS,AR   only some states (default: all)
 import { readFileSync, writeFileSync } from "node:fs";
 import { PARISHES, parishOf } from "../src/parishes.mjs";
+import { isBot, optedOut } from "../src/exclude.mjs";
 import { stateOf } from "../src/states.mjs";
 
 const VIEWER = process.env.VIEWER ?? "wbp318";
@@ -18,16 +19,7 @@ const profiles = JSON.parse(readFileSync(new URL("../data/profiles.json", import
 // to be most active among people who pushed in the last year. Louisiana has more (everyone active),
 // used only for Louisiana's own view and its parishes.
 const PER_STATE = Number(process.env.PER_STATE ?? 80);
-// Accounts named as bots or tests (openshift-cherrypick-robot, redhat-chai-bot, amplify-github-test-hkg)
-// are automation, not people.
-const BOT = /(?:^|[-_.])(?:ro)?bot(?:[-_.]|$)|\[bot\]$|(?:^|[-_])test(?:[-_]|$)/i;
-// People who asked to be left off (src/opt-out.txt).
-const OPT_OUT = new Set(
-  readFileSync(new URL("../src/opt-out.txt", import.meta.url), "utf8")
-    .split(/\r?\n/)
-    .map((l) => l.trim().toLowerCase())
-    .filter((l) => l && !l.startsWith("#")),
-);
+const OPT_OUT = optedOut();
 
 const STATES = [
   ["AL", "Alabama", "South", "East South Central"], ["AK", "Alaska", "West", "Pacific"],
@@ -61,7 +53,7 @@ const BY_AB = Object.fromEntries(STATES.map(([ab, name, region, division]) => [a
 // ---------------------------------------------------------------- place everyone
 const people = [];
 for (const [login, u] of Object.entries(users)) {
-  if (!u || OPT_OUT.has(login.toLowerCase()) || BOT.test(login)) continue;
+  if (!u || OPT_OUT.has(login.toLowerCase()) || isBot(login)) continue;
   const ab = stateOf(u.location);
   if (!ab || (SCOPE && !SCOPE.has(ab))) continue;
   const s = BY_AB[ab];
