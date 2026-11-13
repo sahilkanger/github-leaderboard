@@ -298,6 +298,35 @@ function renderFresh() {
 }
 renderFresh();
 setInterval(renderFresh, 60000);
+// A stale copy (a browser's ten-minute cache, a tab left open overnight) updates itself: ask the
+// server for the newest page, past every cache, and reload onto it if it was built later.
+async function checkForUpdate() {
+  if (location.protocol === "file:") return;
+  try {
+    const r = await fetch(`${location.pathname}?_=${Date.now()}`, { cache: "no-store" });
+    const newest = (await r.text()).match(/"generated":"([^"]+)"/)?.[1];
+    if (newest && newest > D.generated) {
+      const u = new URL(location.href);
+      u.searchParams.set("v", newest.replace(/\D/g, "").slice(0, 14));
+      location.replace(u);
+    }
+  } catch {}
+}
+{
+  // Keep the address clean after an update.
+  const u = new URL(location.href);
+  if (u.searchParams.has("v")) {
+    u.searchParams.delete("v");
+    try {
+      history.replaceState(null, "", u);
+    } catch {}
+  }
+}
+setTimeout(checkForUpdate, 1500);
+setInterval(checkForUpdate, 10 * 60000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) checkForUpdate();
+});
 function renderYou() {
   const box = $("#you");
   box.textContent = "";
