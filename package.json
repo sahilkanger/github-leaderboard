@@ -1,0 +1,23 @@
+{
+  "name": "github-leaderboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A spinning tornado of a year of GitHub contributions across the United States, by state, division, region, and Louisiana parish.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "data": "node scripts/fetch-data.mjs",
+    "collect": "node scripts/collect.mjs",
+    "audit": "node scripts/audit.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbp318/github-leaderboard.git"
+  },
+  "homepage": "https://wbp318.github.io/github-leaderboard/",
+  "license": "MIT"
+}

@@ -1,0 +1,104 @@
+# Every day: refresh the data from GitHub, audit where people were placed, rebuild the page, and
+# publish it to GitHub Pages. On a push to main it rebuilds from the latest data and publishes; on
+# a pull request it tests and builds without publishing.
+#
+# The data lives on the `data` branch, one commit replaced each day, so history does not grow.
+# It uses the workflow's own token, so there is no secret to manage; that token's GraphQL budget
+# (1,000 points an hour) is enough for a daily refresh, and the collector waits for the hourly
+# reset if it runs out.
+name: Refresh and deploy
+
+on:
+  schedule:
+    - cron: "23 10 * * *" # every day, about 4:23 a.m. Central
+  workflow_dispatch:
+    inputs:
+      collect:
+        description: Refresh the data from GitHub before building
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: refresh-and-deploy-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    permissions:
+      contents: write
+      actions: write
+    env:
+      COLLECT: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.collect) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Test the placement rules
+        run: npm test
+
+      - name: Get the latest data
+        run: |
+          mkdir -p data
+          if git fetch --depth=1 origin data; then git archive FETCH_HEAD data | tar -x; fi
+          ls -la data
+
+      - name: Collect from GitHub
+        if: env.COLLECT == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTRIB_MAX_HOURS: 12 # runs are a day apart, so every run refreshes contributions
+        run: node scripts/collect.mjs
+
+      - name: Audit placements
+        if: always() && hashFiles('data/profiles.json') != ''
+        run: node scripts/audit.mjs
+
+      # Saved even when collecting stopped part way, so the next run picks up where this one left off.
+      - name: Save the data to the data branch
+        if: always() && env.COLLECT == 'true' && hashFiles('data/users.json') != ''
+        run: |
+          files=$(ls data/candidates.json data/profiles.json data/users.json data/audit.md 2>/dev/null)
+          tree=$(GIT_INDEX_FILE="$RUNNER_TEMP/data-index" sh -c "git read-tree --empty && git add -f $files && git write-tree")
+          commit=$(git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit-tree "$tree" -m "Data as of $(date -u +%F)")
+          git push --force origin "$commit:refs/heads/data"
+
+      - name: Build the page
+        run: node scripts/build.mjs
+
+      # GitHub turns off scheduled workflows in a repository with no activity for 60 days.
+      - name: Keep the daily schedule on
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable refresh.yml --repo "${{ github.repository }}"
+
+      - uses: actions/configure-pages@v6
+        if: github.event_name != 'pull_request'
+
+      - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'pull_request'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,2 @@
+# GitHub logins to leave off the leaderboard, one a line. Lines starting with # are ignored.
+# To be left off, open an issue or a pull request adding your login here.

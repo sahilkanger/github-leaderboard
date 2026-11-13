@@ -1,0 +1,68 @@
+# Contributing
+
+Thanks for wanting to make this better. Everything here is plain JavaScript on Node 24, with no dependencies to install, so you can be running it in two minutes.
+
+## Run it
+
+```sh
+git clone https://github.com/wbp318/github-leaderboard.git
+cd github-leaderboard
+npm run data     # download the latest data (refreshed daily)
+npm run build    # write site/leaderboard.html
+npm test         # the placement rules
+```
+
+Open `site/leaderboard.html` in a browser. Change [web/template.html](web/template.html), run `npm run build` again, and reload.
+
+## Where things are
+
+| Path | What it is |
+|---|---|
+| [src/states.mjs](src/states.mjs) | Reads a free-text profile location and decides which state it names, if any. The rules most likely to need you. |
+| [src/parishes.mjs](src/parishes.mjs) | Louisiana's 64 parishes and the towns and universities in each. |
+| [src/opt-out.txt](src/opt-out.txt) | People who asked to be left off. |
+| [scripts/collect.mjs](scripts/collect.mjs) | Gathers people and their contributions from GitHub's API into `data/`. |
+| [scripts/audit.mjs](scripts/audit.mjs) | Writes `data/audit.md`: what each rule placed and what it turned away. |
+| [scripts/build.mjs](scripts/build.mjs) | Places everyone, adds it all up, and writes the page. |
+| [scripts/fetch-data.mjs](scripts/fetch-data.mjs) | Downloads the latest data from the `data` branch. |
+| [web/template.html](web/template.html) | The page: the canvas tornado, the map, the tables, all in one file. |
+| [test/states.test.mjs](test/states.test.mjs) | Locations and where they belong. |
+| [.github/workflows/refresh.yml](.github/workflows/refresh.yml) | The daily refresh and the deploy to GitHub Pages. |
+
+## Someone is in the wrong place
+
+Profile locations are free text, and two-letter codes are shared around the world: MS is Mississippi and also Mato Grosso do Sul in Brazil, DE is Delaware and Germany, IN is Indiana and India. When the rules get one wrong:
+
+1. Add the location to [test/states.test.mjs](test/states.test.mjs) with where it belongs (`null` for "not in a US state").
+2. Change [src/states.mjs](src/states.mjs) until `npm test` passes. A foreign city that shares a code usually belongs in the `ELSEWHERE` list for that code.
+3. Run `npm run audit` and read `data/audit.md`: the "turned away" list should hold no US towns and the "accepted" lists no foreign ones.
+
+Not sure how to fix it? [Open an issue](https://github.com/wbp318/github-leaderboard/issues/new/choose) with the exact location text.
+
+## Collect the data yourself
+
+You only need this to change what is collected. It needs the [GitHub CLI](https://cli.github.com/), logged in, and takes about an hour for every state.
+
+```sh
+GH_TOKEN=$(gh auth token) npm run collect          # macOS, Linux, Git Bash
+$env:GH_TOKEN = gh auth token; npm run collect      # PowerShell
+```
+
+`SCOPE=LA,MS,AR` limits it to some states, `PER_STATE` sets how many people a state get their contributions looked up (80), and `VIEWER=<your login>` makes sure you are included and highlighted. The token stays in your environment and is never written to disk.
+
+## Ideas to pick up
+
+- **Find yourself.** Let a visitor type their login and see their ranks, not only the owner's.
+- **Counties.** Louisiana has parishes; do the same for your state's counties, following [src/parishes.mjs](src/parishes.mjs).
+- **History.** Keep a small daily total per state and draw how each state moves over time.
+- **A light theme**, following the page's colour tokens.
+- **More locations.** "Austin TX" (no comma) and "Atlanta, Ga" (lower case) are not placed today; place them without letting in "Tel Aviv IL".
+- **Accessibility.** A keyboard way through the tornado's rings.
+
+## Pull requests
+
+CI runs the tests, the audit, and a full build on every pull request. Please keep it dependency-free and working at phone width.
+
+## Leaving the leaderboard
+
+Everything shown comes from public GitHub profiles. To be left off, add your login to [src/opt-out.txt](src/opt-out.txt) in a pull request, or [open an issue](https://github.com/wbp318/github-leaderboard/issues/new) and it will be done for you.

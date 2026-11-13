@@ -1,0 +1,31 @@
+name: Someone is in the wrong place
+description: A person is counted in the wrong state or parish, counted when they are not in the US, or left out.
+title: "Wrong place: "
+labels: [placement]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks! Placement comes from the free-text location on a GitHub profile, read by the rules in src/states.mjs. The exact text helps most.
+  - type: input
+    id: location
+    attributes:
+      label: The profile location, exactly as written
+      placeholder: Campo Grande, MS
+    validations:
+      required: true
+  - type: input
+    id: placed
+    attributes:
+      label: Where the page puts them
+      placeholder: Mississippi
+  - type: input
+    id: should
+    attributes:
+      label: Where they should be
+      placeholder: Not in the US (Mato Grosso do Sul, Brazil)
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else

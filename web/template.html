@@ -3,8 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
 <title>GitHub Contribution Tornado</title>
+<meta name="description" content="A spinning tornado of a year of GitHub contributions across the United States: every state, division, and region, Louisiana parish by parish, and leaderboards in eight categories. Open source and refreshed daily.">
+<meta property="og:title" content="GitHub Contribution Tornado">
+<meta property="og:description" content="A year of GitHub contributions across the United States, by state, division, region, and Louisiana parish. Refreshed daily.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wbp318.github.io/github-leaderboard/">
+<meta name="theme-color" content="#0b1430">
 <style>
 /* One visual world with the Goin' Postal tornado: a storm at night. */
 :root {
@@ -24,6 +29,9 @@ body { padding: 20px clamp(12px, 3vw, 32px) 40px; }
 a { color: #86b6ef; }
 header h1 { margin: 0; font-size: clamp(26px, 4vw, 40px); letter-spacing: 0.01em; }
 header p { margin: 4px 0 0; color: var(--muted); max-width: 980px; }
+.repo { display: inline-block; margin-top: 8px; color: var(--gold); font-weight: 600; text-decoration: none; }
+.repo:hover { text-decoration: underline; }
+footer a { color: var(--gold); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 16px 0; }
 .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
 .tile .k { color: var(--muted); font-size: 12.5px; }
@@ -101,6 +109,7 @@ footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 98
 <header>
   <h1 id="title">GitHub Contribution Tornado</h1>
   <p id="sub"></p>
+  <a class="repo" href="https://github.com/wbp318/github-leaderboard">Open source on GitHub: fix a placement, add a feature, star it ★</a>
 </header>
 <div class="tiles" id="you"></div>
 
@@ -156,7 +165,7 @@ footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 98
 
 <section id="states">
   <h2>The states</h2>
-  <p class="lede">Click a state on the map or in the table to open its tornado. Map colour: total contributions of the people counted. Dimmed states are not counted yet.</p>
+  <p class="lede">Click a state on the map or in the table to open its tornado. Map colour: total contributions of the people counted.<span id="uncounted"> Dimmed states are not counted yet.</span></p>
   <div class="grid2">
     <div class="panel">
       <div class="bar">
@@ -186,7 +195,7 @@ footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 98
   <div class="panel"><div class="scroll"><table id="parishTable"></table></div></div>
 </section>
 
-<footer id="method"></footer>
+<footer><p id="method"></p><p>Built with no frameworks: one HTML file, a canvas, and GitHub's API. The code, the placement rules, and the daily refresh are at <a href="https://github.com/wbp318/github-leaderboard">github.com/wbp318/github-leaderboard</a>. Someone in the wrong state? <a href="https://github.com/wbp318/github-leaderboard/issues/new">Open an issue</a> or add a test case and send a pull request.</p></footer>
 
 <script>
 "use strict";
@@ -309,9 +318,9 @@ const viewTitle = (view) => {
 };
 const parentOf = (view) => {
   const [kind, val] = view.split(":");
-  if (kind === "region" || kind === "us") return kind === "us" ? null : "all";
-  if (kind === "division") return "us";
-  if (kind === "state") return "all";
+  if (kind === "us" || kind === "all") return null;
+  if (kind === "region" || kind === "division") return COUNTED.length > 20 ? "us" : "all";
+  if (kind === "state") return COUNTED.length > 20 ? `division:${STATE[val].division}` : "all";
   if (kind === "parish") return "state:LA";
   return null;
 };
@@ -935,7 +944,7 @@ for (const b of document.querySelectorAll("#mapby button")) {
 }
 
 // ---------------------------------------------------------------- method
-$("#method").textContent = `How this was made: GitHub's search found users whose profile location names a state in ${D.scopeName} (its full name, or "City, ST"), the top few hundred per state by followers and by number of repositories, plus Louisiana by city name. Of those who pushed code in the last year, up to ${D.perState} a state with the most public repositories and followers (and everyone in Louisiana) had their contributions looked up, so very active people who work mostly in private can be missed. Each person's last 12 months of contributions came from GitHub's API. People are placed by what their profile says; locations that are ambiguous (Georgia the country, Washington DC) are left out. It is a sample of each state's most visible GitHub users, not a census: ${fmt(D.candidates)} search results, ${fmt(D.fetched)} people looked up, ${fmt(D.P.length)} placed in a state.`;
+$("#method").textContent = `How this was made: GitHub's search found users whose profile location names a state in ${D.scopeName} (its full name, or "City, ST"), the top few hundred per state by followers and by number of repositories, plus Louisiana by city name. Of those who pushed code in the last year, up to ${D.perState} a state with the most public repositories and followers (and everyone in Louisiana) had their contributions looked up, so very active people who work mostly in private can be missed. Each person's last 12 months of contributions came from GitHub's API. People are placed by what their profile says, and a two-letter code is checked against the places abroad that share it (MS is also Mato Grosso do Sul in Brazil, DE is Germany, IN is India); locations that stay ambiguous (Georgia the country, Washington DC) are left out, and so are accounts named as bots. It is a sample of each state's most visible GitHub users, not a census: ${fmt(D.candidates)} search results, ${fmt(D.fetched)} people looked up, ${fmt(D.P.length)} placed in a state.`;
 
 // ---------------------------------------------------------------- start
 buildViewSelect();
@@ -944,7 +953,9 @@ renderYou();
 renderBoard();
 renderTables();
 renderMap();
-go("all");
+if (COUNTED.length === D.states.length) $("#uncounted").remove();
+// A tornado of every state is tall; with many states, open on the divisions.
+go(COUNTED.length > 20 ? "us" : "all");
 new ResizeObserver(resize).observe(cv);
 resize();
 let last = performance.now();

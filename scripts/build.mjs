@@ -1,22 +1,33 @@
-// Builds leaderboard.html from data/candidates.json and data/users.json: each user placed in a
-// state from their profile location, then regions, divisions, states, and rankings by category.
-//   node build.mjs
+// Builds site/leaderboard.html from data/: each person placed in a state from their profile
+// location (src/states.mjs), then regions, divisions, states, Louisiana parishes, and rankings by
+// category, written into web/template.html.
+//   node scripts/build.mjs   (or: npm run build)
+//   VIEWER=<login>   whose ranks the page shows as "you" (they must be in data/users.json)
+//   SCOPE=LA,MS,AR   only some states (default: all)
 import { readFileSync, writeFileSync } from "node:fs";
-import { laOnlyRe, PARISHES, parishOf } from "./parishes.mjs";
-import { stateOf as sharedStateOf } from "./states.mjs";
+import { PARISHES, parishOf } from "../src/parishes.mjs";
+import { stateOf } from "../src/states.mjs";
 
-const VIEWER = "wbp318";
-// The states counted so far (SCOPE=all for every state).
-const SOUTH = ["AL", "AR", "DE", "FL", "GA", "KY", "LA", "MD", "MS", "NC", "OK", "SC", "TN", "TX", "VA", "WV", "MO"];
-const SCOPE = process.env.SCOPE === "all" ? null : new Set((process.env.SCOPE ?? SOUTH.join(",")).split(","));
-const SCOPE_NAME = !SCOPE ? "the United States" : process.env.SCOPE ? "the states chosen" : "the South and Missouri";
-const cands = JSON.parse(readFileSync(new URL("./data/candidates.json", import.meta.url), "utf8"));
-const users = JSON.parse(readFileSync(new URL("./data/users.json", import.meta.url), "utf8"));
-const profiles = JSON.parse(readFileSync(new URL("./data/profiles.json", import.meta.url), "utf8"));
+const VIEWER = process.env.VIEWER ?? "wbp318";
+const SCOPE = process.env.SCOPE && process.env.SCOPE !== "all" ? new Set(process.env.SCOPE.split(",")) : null;
+const SCOPE_NAME = SCOPE ? "the states chosen" : "the United States";
+const cands = JSON.parse(readFileSync(new URL("../data/candidates.json", import.meta.url), "utf8"));
+const users = JSON.parse(readFileSync(new URL("../data/users.json", import.meta.url), "utf8"));
+const profiles = JSON.parse(readFileSync(new URL("../data/profiles.json", import.meta.url), "utf8"));
 // States are compared on the same sample everywhere: the collector's rule, the PER_STATE likeliest
 // to be most active among people who pushed in the last year. Louisiana has more (everyone active),
 // used only for Louisiana's own view and its parishes.
 const PER_STATE = Number(process.env.PER_STATE ?? 80);
+// Accounts named as bots or tests (openshift-cherrypick-robot, redhat-chai-bot, amplify-github-test-hkg)
+// are automation, not people.
+const BOT = /(?:^|[-_.])(?:ro)?bot(?:[-_.]|$)|\[bot\]$|(?:^|[-_])test(?:[-_]|$)/i;
+// People who asked to be left off (src/opt-out.txt).
+const OPT_OUT = new Set(
+  readFileSync(new URL("../src/opt-out.txt", import.meta.url), "utf8")
+    .split(/\r?\n/)
+    .map((l) => l.trim().toLowerCase())
+    .filter((l) => l && !l.startsWith("#")),
+);
 
 const STATES = [
   ["AL", "Alabama", "South", "East South Central"], ["AK", "Alaska", "West", "Pacific"],
@@ -46,42 +57,11 @@ const STATES = [
   ["WI", "Wisconsin", "Midwest", "East North Central"], ["WY", "Wyoming", "West", "Mountain"],
 ];
 const BY_AB = Object.fromEntries(STATES.map(([ab, name, region, division]) => [ab, { ab, name, region, division }]));
-const BY_LENGTH = [...STATES].sort((a, b) => b[1].length - a[1].length);
-const NAME_RE = BY_LENGTH.map(([ab, name]) => [ab, new RegExp(`\\b${name.replace(/ /g, "\\s+")}\\b`, "i")]);
-
-// "City, XX" abbreviations shared with other countries: reject the foreign ones.
-const FOREIGN = {
-  CA: /canada|toronto|vancouver|montr[eé]al|ottawa|calgary|edmonton|winnipeg|ontario|qu[eé]bec|alberta|british columbia|halifax|victoria,\s*bc/i,
-  IN: /india|bangalore|bengaluru|mumbai|delhi|hyderabad|pune|chennai|kolkata|noida|gurgaon|gurugram|ahmedabad|jaipur|kochi|kerala|lucknow|indore|bhopal|nagpur|surat|coimbatore/i,
-  DE: /germany|deutschland|berlin|munich|m[uü]nchen|hamburg|frankfurt|cologne|k[oö]ln|stuttgart|dresden|leipzig|d[uü]sseldorf|karlsruhe/i,
-  GA: /tbilisi|gabon|libreville/i,
-  CO: /colombia|bogot[aá]|medell[ií]n|\bcali\b|barranquilla/i,
-  MA: /morocco|casablanca|rabat|marrakech|tangier/i,
-  PA: /panam[aá]|pakistan/i,
-  AL: /albania|tirana/i,
-  ME: /montenegro|podgorica/i,
-  MD: /moldova|chi[sș]in[aă]u/i,
-  NE: /niger\b|niamey/i,
-  SC: /seychelles/i,
-  SD: /sudan|khartoum/i,
-  TN: /tunisia|tunis\b/i,
-  MT: /malta|valletta/i,
-  MN: /mongolia|ulaanbaatar/i,
-  ID: /indonesia|jakarta|bandung|surabaya|yogyakarta/i,
-  AR: /argentina|buenos aires|c[oó]rdoba|rosario/i,
-  NC: /new caledonia|noum[eé]a/i,
-  LA: /laos|vientiane|los angeles/i,
-  VA: /vatican/i,
-  AZ: /azerbaijan|baku/i,
-  IL: /israel|tel aviv/i,
-};
-
-const stateOf = sharedStateOf; // one set of rules, shared with the collector
 
 // ---------------------------------------------------------------- place everyone
 const people = [];
 for (const [login, u] of Object.entries(users)) {
-  if (!u) continue;
+  if (!u || OPT_OUT.has(login.toLowerCase()) || BOT.test(login)) continue;
   const ab = stateOf(u.location);
   if (!ab || (SCOPE && !SCOPE.has(ab))) continue;
   const s = BY_AB[ab];
@@ -137,7 +117,7 @@ const P = people.map((p) => [p.login, p.name, p.state, p.total, p.commits, p.pri
 const me = people.find((p) => p.login === VIEWER) ?? null;
 const data = { generated: new Date().toISOString(), scopeName: SCOPE_NAME, perState: PER_STATE, compared: fair.length, viewer: VIEWER, me, us, regions, divisions, states, parishes, P, candidates: Object.values(cands).reduce((a, s) => a + s.logins.length, 0), fetched: Object.keys(users).length };
 
-const tpl = readFileSync(new URL("./template.html", import.meta.url), "utf8");
-writeFileSync(new URL("./leaderboard.html", import.meta.url), tpl.replace("/*__DATA__*/null", () => JSON.stringify(data).replace(/</g, String.fromCharCode(92) + "x3c")));
+const tpl = readFileSync(new URL("../web/template.html", import.meta.url), "utf8");
+writeFileSync(new URL("../site/leaderboard.html", import.meta.url), tpl.replace("/*__DATA__*/null", () => JSON.stringify(data).replace(/</g, String.fromCharCode(92) + "x3c")));
 console.log(`placed ${people.length} of ${Object.keys(users).length} users in a state (${fair.length} in the per-state sample); leaderboard.html written`);
 if (me) console.log(`you: ${me.state}, ${me.total} contributions`);

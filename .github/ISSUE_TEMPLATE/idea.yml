@@ -1,0 +1,14 @@
+name: An idea or a bug
+description: A feature, a chart, something broken, something confusing.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would make it better?
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where on the page (a screenshot helps)

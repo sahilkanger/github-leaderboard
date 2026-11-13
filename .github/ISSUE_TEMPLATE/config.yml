@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Leave me off the leaderboard
+    url: https://github.com/wbp318/github-leaderboard/blob/main/CONTRIBUTING.md#leaving-the-leaderboard
+    about: Add your login to src/opt-out.txt, or open an issue and it will be done for you.
