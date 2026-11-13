@@ -408,7 +408,7 @@ function geom() {
   const bot = storm.H - 70;
   const n = rows.length;
   const maxHalf = Math.max(1, ...rows.flatMap((r) => [r.left, r.right]));
-  const rMax = Math.max(48, Math.min(cx - (narrow ? 40 : 70), 330));
+  const rMax = Math.max(48, Math.min(cx - (narrow ? 52 : 74), 330));
   const k = rMax / maxHalf;
   const step = n > 1 ? (bot - top) / (n - 1) : 0;
   const tilt = n > 12 ? 0.16 : 0.22;
