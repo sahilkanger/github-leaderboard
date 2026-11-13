@@ -356,6 +356,13 @@ async function phase1b(cands) {
 }
 
 const cands = await phase1b(await phase1());
-// VIEWER is always looked up, so the page can show their ranks.
-await phase2(cands, [process.env.VIEWER ?? "wbp318"]);
+// Always looked up: VIEWER, and people who added themselves through an "Add me" issue (the daily
+// workflow lists them into data/added.txt from the issues labelled "added").
+const added = existsSync(file("added.txt"))
+  ? readFileSync(file("added.txt"), "utf8")
+      .split(/\s+/)
+      .filter((l) => /^[A-Za-z0-9-]{1,39}$/.test(l))
+  : [];
+if (added.length) log(`${added.length} people added themselves`);
+await phase2(cands, [process.env.VIEWER ?? "wbp318", ...added]);
 log("collection complete");

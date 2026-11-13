@@ -50,6 +50,12 @@ A year of contributions for the people looked up: in each state, the 80 most lik
 - `private`: contributions to private repositories, counted only if they show them on their profile. For the busiest accounts GitHub cannot count this field in one query, so it is the calendar total minus the public kinds, which is how the calendar adds up.
 - Refreshed every day.
 
+### Who added themselves
+
+Anyone not on the leaderboard can open an [Add me](https://github.com/wbp318/github-leaderboard/issues/new?template=add-me.yml) issue. The [add-me workflow](../.github/workflows/add-me.yml) checks the issue's author (never the issue's text, so nobody can add someone else) with [scripts/add-me.mjs](../scripts/add-me.mjs): their profile location must name a US state, and they must not be a bot, a test account, or on the opt-out list. If they can be placed, it labels the issue `added`, replies with a link to their ranks, and starts a refresh.
+
+The list of people added is the authors of issues labelled `added`; GitHub is the record, so two requests at once cannot overwrite each other. Each refresh writes that list to `data/added.txt` and looks them up along with everyone else. They are ranked among each state's sample of 80 but are not part of it, so adding yourself never changes how states compare.
+
 ### audit.md
 
 The [placement audit](placement.md#checking-the-rules): what each rule placed, what the guards turned away, and every city accepted under a shared code.
@@ -62,7 +68,7 @@ The [placement audit](placement.md#checking-the-rules): what each rule placed, w
 |---|---|---|
 | `SCOPE` | every state | Only some states, such as `LA,MS,AR` |
 | `PER_STATE` | 80 | People a state whose contributions are looked up, and used to compare states |
-| `VIEWER` | wbp318 | Always looked up, and shown as "you" on the page |
+| `VIEWER` | wbp318 | Always looked up |
 | `CONTRIB_MAX_HOURS` | 20 (12 in the daily run) | When contributions count as stale |
 | `PROFILE_MAX_DAYS` | 7 | When profiles count as stale |
 | `SEARCH_MAX_DAYS` | 7 | When searches count as stale |

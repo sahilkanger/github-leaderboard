@@ -76,6 +76,7 @@ select, input[type="search"] {
 #findmsg:empty { display: none; }
 #findmsg button { font: inherit; color: var(--gold); background: none; border: 0; padding: 0 2px; cursor: pointer; text-decoration: underline; }
 #findmsg a { color: var(--gold); }
+#findmsg a.addme { display: inline-block; color: var(--sky); text-decoration: none; padding: 3px 10px; margin: 0 2px; }
 canvas { display: block; width: 100%; height: clamp(600px, 78vh, 820px); touch-action: pan-y; }
 .stip {
   position: absolute; pointer-events: none; display: none; z-index: 3; min-width: 210px; max-width: 300px;
@@ -1005,18 +1006,20 @@ function notFound(login) {
     .filter((p) => p[F.login].toLowerCase().startsWith(login.toLowerCase().slice(0, 3)))
     .sort((a, b) => b[F.total] - a[F.total])
     .slice(0, 5);
+  const add = h("a", { class: "btn go addme", href: "https://github.com/wbp318/github-leaderboard/issues/new?template=add-me.yml", target: "_blank", rel: "noopener", text: "Add me" });
   msg.append(
-    `${login} is not on the leaderboard. People are counted when their GitHub profile location names a US state; in each state the ${D.perState} likeliest to be busiest (most public repositories and followers, among those who pushed code in the last year) are looked up, and in Louisiana everyone active. `,
+    `${login} is not on the leaderboard yet: each state looks up only the ${D.perState} people likeliest to be busiest (and Louisiana everyone active). `,
+    add,
+    " opens a one-click GitHub issue; a bot adds whoever opens it and replies with a link to their ranks in a few minutes. Your profile's location must name a US state. ",
   );
   if (near.length) {
-    msg.append("Did you mean ");
+    msg.append("Or did you mean ");
     near.forEach((p, i) => {
       const b = h("button", { type: "button", text: p[F.login] });
       b.addEventListener("click", () => setMe(p[F.login], { open: true }));
-      msg.append(b, i < near.length - 1 ? ", " : "? ");
+      msg.append(b, i < near.length - 1 ? ", " : "?");
     });
   }
-  msg.append("Think you should be here? ", h("a", { href: "https://github.com/wbp318/github-leaderboard/issues/new/choose", text: "Tell us" }), ".");
 }
 // Show the ranks of a login; with open, also turn the tornado to their state.
 function setMe(input, { open = false } = {}) {

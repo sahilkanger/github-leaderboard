@@ -73,6 +73,10 @@ Read the audit in both directions: a US town in "turned away" means a rule is to
 
 Or [open an issue](https://github.com/wbp318/github-leaderboard/issues/new/choose) with the exact location text.
 
+## Not on the leaderboard?
+
+Each state looks up only its 80 likeliest-busiest people (and Louisiana everyone active), so most people are not on it. On the page, typing a login that is not there offers **Add me**, a one-click [issue](https://github.com/wbp318/github-leaderboard/issues/new?template=add-me.yml): the bot places whoever opens it with these same rules and replies with their ranks, or with why it could not place them.
+
 ## Other people who are left off
 
 - **Bots and test accounts.** Logins with a separate `bot`, `robot`, or `test` part (`openshift-cherrypick-robot`, `amplify-github-test-hkg`) are automation, not people.

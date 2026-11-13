@@ -1,0 +1,57 @@
+# Someone opened an "Add me" issue: check they can be placed, reply, and if so, label the issue
+# "added" and start a refresh, which looks up everyone with that label. The person added is the
+# issue's author, taken from GitHub, never from the issue's text.
+name: Add me
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  add:
+    if: contains(github.event.issue.labels.*.name, 'add-me') && github.event.issue.user.type == 'User'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Get the latest data
+        run: |
+          mkdir -p data
+          if git fetch --depth=1 origin data; then git archive FETCH_HEAD data | tar -x; fi
+
+      - name: Check the request
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ADD_LOGIN: ${{ github.event.issue.user.login }}
+          REPLY: ${{ runner.temp }}/reply.md
+        run: node scripts/add-me.mjs
+
+      - name: Label it and start a refresh
+        if: steps.check.outputs.result == 'added'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --add-label added
+          gh workflow run refresh.yml --repo "$GITHUB_REPOSITORY" -f collect=true
+
+      - name: Reply and close
+        if: always() && steps.check.outputs.result != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          RESULT: ${{ steps.check.outputs.result }}
+        run: |
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/reply.md"
+          case "$RESULT" in added|already) reason=completed ;; *) reason="not planned" ;; esac
+          gh issue close "$ISSUE" --repo "$GITHUB_REPOSITORY" --reason "$reason"

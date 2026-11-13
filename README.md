@@ -5,14 +5,15 @@
 
 A year of GitHub contributions across the United States, drawn as a spinning tornado: all 50 states, the nine Census divisions and four regions, Louisiana parish by parish, and leaderboards in eight categories. About 34,000 developers found, the likeliest-busiest 80 in each state compared, refreshed every day by GitHub Actions. One HTML file, no frameworks, no dependencies.
 
-**See it live: https://wbp318.github.io/github-leaderboard/**
+**See it live: https://wbp318.github.io/github-leaderboard/** and type your GitHub login to see where you rank. Not on it? One click adds you.
 
 ![The tornado: states ranked by a year of contributions, each ring split into public commits and everything else](docs/screenshot.png)
 
 ## What is on the page
 
 - **The tornado.** Each ring is a place, the busiest at the top. Its red half is public commits; its blue half is everything else: pull requests, reviews, issues, new repositories, and private contributions for people who show them. Click a ring to go down a level, from divisions to states to a state's busiest people.
-- **Your ranks** in your parish, state, division, region, and the country.
+- **Find yourself.** Type your GitHub login to see your ranks in your parish, state, division, region, and the country, with you in gold in the tornado, the lists, and the map. `?me=<login>` links straight to anyone's ranks.
+- **Add yourself.** Not on it? The **Add me** button opens a one-click issue; [a bot](https://github.com/wbp318/github-leaderboard/blob/main/.github/workflows/add-me.yml) checks your profile location, adds you, and replies with a link to your ranks in a few minutes. You are refreshed daily after that.
 - **Leaderboards** in eight categories (total, public commits, private, pull requests, reviews, issues, new repositories, followers) for any state, division, region, or Louisiana parish, with each person's location. Search by login, name, or place.
 - **A map** of all 50 states, coloured by contributions, people counted, or average.
 - **Tables** of the states, the regions and divisions, and all 64 Louisiana parishes.
