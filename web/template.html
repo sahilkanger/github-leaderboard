@@ -179,6 +179,7 @@ footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 98
       <span class="lbl">Where</span>
       <select id="scope" aria-label="Where"></select>
       <input type="search" id="find" placeholder="Find a login, name, or place" aria-label="Find a login, name, or place">
+      <button type="button" class="btn" id="csv" title="Download this list, every row, as a spreadsheet file">Download CSV</button>
       <span class="lbl" id="count"></span>
     </div>
     <div class="scroll"><table id="board"></table></div>
@@ -826,6 +827,37 @@ function buildLists() {
   sel.value = "us";
   sel.addEventListener("change", renderBoard);
   $("#find").addEventListener("input", renderBoard);
+  $("#csv").addEventListener("click", downloadCsv);
+}
+// The rows of a ranked list that match what is typed in Find, each with its rank in the list.
+const matching = (list, q) => {
+  const all = list.map((p, i) => [p, i]);
+  return q ? all.filter(([p]) => p[0].toLowerCase().includes(q) || (p[F.name] || "").toLowerCase().includes(q) || (p[F.location] || "").toLowerCase().includes(q)) : all;
+};
+// One CSV field (RFC 4180): quoted when it holds a comma, quote, or line break, with quotes doubled.
+// Text that a spreadsheet would read as a formula (=, +, -, @) gets a leading ' to stay text.
+function csvField(v) {
+  let s = v == null ? "" : String(v);
+  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+// The list as it is filtered now (place, category, and Find), every row, as a .csv download.
+function downloadCsv() {
+  const scope = $("#scope").value;
+  const q = $("#find").value.trim().toLowerCase();
+  const head = ["rank", "login", "location", "name", "state", "parish", ...CATS.map((c) => c[1])];
+  const lines = [head.map(csvField).join(",")];
+  for (const [p, i] of matching(ranked(scope, cat), q)) {
+    lines.push([i + 1, p[F.login], p[F.location] || "", p[F.name] || "", STATE[p[F.state]].name, p[F.state] === "LA" ? p[F.parish] || "not given" : "", ...CATS.map((c) => p[F[c[0]]])].map(csvField).join(","));
+  }
+  // The byte-order mark tells Excel the file is UTF-8; CRLF is what RFC 4180 and Excel expect.
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
+  const slug = scope.replace(/^us$/, "all").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+  const a = h("a", { href: URL.createObjectURL(blob), download: `leaderboard-${slug}-${cat}.csv` });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 function renderBoard() {
   const scope = $("#scope").value;
@@ -849,8 +881,7 @@ function renderBoard() {
     ]);
     tb.appendChild(tr);
   };
-  const shown = q ? list.map((p, i) => [p, i]).filter(([p]) => p[0].toLowerCase().includes(q) || (p[F.name] || "").toLowerCase().includes(q) || (p[F.location] || "").toLowerCase().includes(q)).slice(0, 100) : list.slice(0, 100).map((p, i) => [p, i]);
-  for (const [p, i] of shown) row(p, i);
+  for (const [p, i] of matching(list, q).slice(0, 100)) row(p, i);
   if (!q && ME) {
     const i = list.indexOf(ME);
     if (i >= 100) row(ME, i);

@@ -3,6 +3,7 @@
 // on a phone. CI runs it on every pull request and before every deploy.
 //   npm i --no-save --no-package-lock playwright && npx playwright install chromium   (once)
 //   npm run build && npm run e2e
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 
 const url = new URL("../site/leaderboard.html", import.meta.url).href;
@@ -41,6 +42,15 @@ await page.locator("#cv").scrollIntoViewIfNeeded();
 await page.waitForTimeout(800);
 check((await lit(page)) > 1000, "the tornado draws");
 check((await page.locator("#you .tile").count()) === 0, "a first visit shows no one as you");
+
+// Download CSV: every row of the list as it is filtered, not only the 100 shown.
+const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#csv")]);
+const csv = readFileSync(await dl.path(), "utf8");
+const csvRows = csv.replace(/^﻿/, "").trimEnd().split("\r\n");
+const people = Number((await page.locator("#count").innerText()).replace(/\D/g, ""));
+check(dl.suggestedFilename() === "leaderboard-all-total.csv", "Download CSV names the file for the list");
+check(csvRows[0].startsWith("rank,login,location,name,state,parish,Total contributions,"), "the CSV has a header row");
+check(csvRows.length === people + 1, `the CSV has every row (${csvRows.length - 1} of ${people})`);
 
 // Someone to be: the busiest person in the data, and a state that is not theirs.
 const [login, home, away] = await page.evaluate(() => {
