@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for wanting to make this better. Everything here is plain JavaScript on Node 24, with no dependencies to install, so you can be running it in two minutes.
+Thanks for wanting to make this better. Everything here is plain JavaScript on Node 24, with no dependencies to install, so you can be running it in two minutes. Please follow the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Run it
 
@@ -27,11 +27,13 @@ Open `site/leaderboard.html` in a browser. Change [web/template.html](web/templa
 | [scripts/fetch-data.mjs](scripts/fetch-data.mjs) | Downloads the latest data from the `data` branch. |
 | [web/template.html](web/template.html) | The page: the canvas tornado, the map, the tables, all in one file. |
 | [test/states.test.mjs](test/states.test.mjs) | Locations and where they belong. |
+| [docs/placement.md](docs/placement.md) | How the placement rules work, and the audit. |
+| [docs/data.md](docs/data.md) | Every data file and field, and the collector's settings. |
 | [.github/workflows/refresh.yml](.github/workflows/refresh.yml) | The daily refresh and the deploy to GitHub Pages. |
 
 ## Someone is in the wrong place
 
-Profile locations are free text, and two-letter codes are shared around the world: MS is Mississippi and also Mato Grosso do Sul in Brazil, DE is Delaware and Germany, IN is Indiana and India. When the rules get one wrong:
+Profile locations are free text, and two-letter codes are shared around the world: MS is Mississippi and also Mato Grosso do Sul in Brazil, DE is Delaware and Germany, IN is Indiana and India ([the full table](docs/placement.md#the-problem-codes-are-shared)). When the rules get one wrong:
 
 1. Add the location to [test/states.test.mjs](test/states.test.mjs) with where it belongs (`null` for "not in a US state").
 2. Change [src/states.mjs](src/states.mjs) until `npm test` passes. A foreign city that shares a code usually belongs in the `ELSEWHERE` list for that code.
@@ -48,7 +50,7 @@ GH_TOKEN=$(gh auth token) npm run collect          # macOS, Linux, Git Bash
 $env:GH_TOKEN = gh auth token; npm run collect      # PowerShell
 ```
 
-`SCOPE=LA,MS,AR` limits it to some states, `PER_STATE` sets how many people a state get their contributions looked up (80), and `VIEWER=<your login>` makes sure you are included and highlighted. The token stays in your environment and is never written to disk.
+`SCOPE=LA,MS,AR` limits it to some states, `PER_STATE` sets how many people in each state have their contributions looked up (80), and `VIEWER=<your login>` makes sure you are included and highlighted; [docs/data.md](docs/data.md#how-it-is-collected) lists every setting. The token stays in your environment and is never written to disk. Rerunning fetches only what is missing or stale, so you can stop it at any point.
 
 ## Ideas to pick up
 
