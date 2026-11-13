@@ -61,7 +61,6 @@ Each of these is an issue with what to build, where in the code, and how to know
 
 Good first issues:
 
-- [Find yourself: let any visitor see their own ranks](https://github.com/wbp318/github-leaderboard/issues/1)
 - [Links to a view: put the current view in the URL](https://github.com/wbp318/github-leaderboard/issues/2)
 - [Download a leaderboard as CSV](https://github.com/wbp318/github-leaderboard/issues/3)
 - [A light theme](https://github.com/wbp318/github-leaderboard/issues/4)
@@ -72,6 +71,7 @@ Bigger ones:
 - [Keyboard and screen-reader access to the tornado](https://github.com/wbp318/github-leaderboard/issues/6)
 - [Counties for your state, like Louisiana's parishes](https://github.com/wbp318/github-leaderboard/issues/7)
 - [History: how each state moves over time](https://github.com/wbp318/github-leaderboard/issues/8)
+- [Live lookups for anyone: a Cloudflare Worker behind Find yourself](https://github.com/wbp318/github-leaderboard/issues/10)
 
 [All good first issues](https://github.com/wbp318/github-leaderboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). Have a different idea? [Open an issue](https://github.com/wbp318/github-leaderboard/issues/new/choose).
 
