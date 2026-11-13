@@ -62,13 +62,20 @@ jobs:
         run: node scripts/audit.mjs
 
       # Saved even when collecting stopped part way, so the next run picks up where this one left off.
+      # The branch gets .github/data-branch-README.md as its README, saying not to edit, merge, or delete it.
       - name: Save the data to the data branch
         if: always() && env.COLLECT == 'true' && hashFiles('data/users.json') != ''
         run: |
-          files=$(ls data/candidates.json data/profiles.json data/users.json data/audit.md 2>/dev/null)
-          tree=$(GIT_INDEX_FILE="$RUNNER_TEMP/data-index" sh -c "git read-tree --empty && git add -f $files && git write-tree")
-          commit=$(git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit-tree "$tree" -m "Data as of $(date -u +%F)")
+          # Fixed file names only: nothing from the data is ever run as a command.
+          export GIT_INDEX_FILE="$RUNNER_TEMP/data-index"
+          git read-tree --empty
+          for f in data/candidates.json data/profiles.json data/users.json data/audit.md; do
+            if [ -f "$f" ]; then git add -f -- "$f"; fi
+          done
+          git update-index --add --cacheinfo "100644,$(git hash-object -w .github/data-branch-README.md),README.md"
+          tree=$(git write-tree)
+          unset GIT_INDEX_FILE
+          commit=$(git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com"             commit-tree "$tree" -m "Data as of $(date -u +%F)")
           git push --force origin "$commit:refs/heads/data"
 
       - name: Build the page
