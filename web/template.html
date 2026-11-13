@@ -66,6 +66,16 @@ select, input[type="search"] {
 }
 .canvas-box { position: relative; }
 #find { min-width: 230px; }
+.findme { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 18px 0 0; padding: 12px 14px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.findme label { font-weight: 700; color: var(--gold); }
+.findme input { min-width: 200px; flex: 0 1 260px; }
+.findme .go { background: var(--gold); color: var(--sky); border-color: var(--gold); font-weight: 600; }
+.findme .go:hover { background: #ffd23f; }
+#findmsg { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 13px; }
+#findmsg:empty { display: none; }
+#findmsg button { font: inherit; color: var(--gold); background: none; border: 0; padding: 0 2px; cursor: pointer; text-decoration: underline; }
+#findmsg a { color: var(--gold); }
 canvas { display: block; width: 100%; height: clamp(600px, 78vh, 820px); touch-action: pan-y; }
 .stip {
   position: absolute; pointer-events: none; display: none; z-index: 3; min-width: 210px; max-width: 300px;
@@ -99,7 +109,7 @@ td.loc { color: var(--muted); max-width: 240px; overflow: hidden; text-overflow:
 .kv > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .where { color: var(--muted); opacity: 0.85; font-size: 11.5px; margin-left: 6px; }
 .stip .loc { color: var(--muted); font-size: 12px; margin: -2px 0 6px; }
-.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 14px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 14px; }
 #map svg { display: block; width: 100%; height: auto; }
 .note { color: var(--muted); font-size: 12.5px; }
 footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 980px; }
@@ -111,6 +121,13 @@ footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 98
   <p id="sub"></p>
   <a class="repo" href="https://github.com/wbp318/github-leaderboard">Open source on GitHub: fix a placement, add a feature, star it ★</a>
 </header>
+<form class="findme" id="findme" autocomplete="off">
+  <label for="me">Find yourself</label>
+  <input type="search" id="me" name="me" placeholder="your GitHub login" spellcheck="false" autocapitalize="none" aria-describedby="findmsg">
+  <button class="btn go" type="submit">Show my ranks</button>
+  <button class="btn" type="button" id="forget" hidden>Forget me</button>
+  <p id="findmsg" role="status" aria-live="polite"></p>
+</form>
 <div class="tiles" id="you"></div>
 
 <section id="tornado">
@@ -226,8 +243,10 @@ const REGIONS = D.regions.map((r) => r.name);
 const SCOPE = D.scopeName.charAt(0).toUpperCase() + D.scopeName.slice(1);
 document.title = `GitHub Contribution Tornado: ${SCOPE}`;
 $("#title").textContent = `GitHub Contribution Tornado: ${SCOPE}`;
-const ME = D.P.find((p) => p[0] === D.viewer) ?? null;
-const fairOrMe = (p) => p[F.fair] === 1 || p[F.login] === D.viewer;
+// Whoever the visitor says they are (setMe, below); null until then.
+let ME = null;
+const BY_LOGIN = new Map(D.P.map((p) => [p[F.login].toLowerCase(), p]));
+const fairOrMe = (p) => p[F.fair] === 1 || p === ME;
 const inScope = (scope) => {
   const [kind, val] = scope.split(":");
   if (kind === "us" || kind === "all") return fairOrMe;
@@ -253,13 +272,10 @@ $("#sub").textContent = `The last 12 months of GitHub contributions for ${fmt(D.
 function renderYou() {
   const box = $("#you");
   box.textContent = "";
-  if (!ME) {
-    box.appendChild(h("div", { class: "tile" }, [h("div", { class: "k", text: "You" }), h("div", { class: "v", text: "Not found" }), h("div", { class: "n", text: "Your profile location did not match a state" })]));
-    return;
-  }
+  if (!ME) return;
   const st = STATE[ME[F.state]];
   const tiles = [
-    ["Your contributions", fmt(ME[F.total]), `${fmt(ME[F.commits])} public commits · ${fmt(ME[F.private])} private`],
+    [`${ME[F.login]}: contributions`, fmt(ME[F.total]), `${fmt(ME[F.commits])} public commits · ${fmt(ME[F.private])} private`],
   ];
   if (ME[F.parish]) {
     const r = rankOf(`parish:${ME[F.parish]}`);
@@ -946,6 +962,106 @@ for (const b of document.querySelectorAll("#mapby button")) {
 // ---------------------------------------------------------------- method
 $("#method").textContent = `How this was made: GitHub's search found users whose profile location names a state in ${D.scopeName} (its full name, or "City, ST"), the top few hundred per state by followers and by number of repositories, plus Louisiana by city name. Of those who pushed code in the last year, up to ${D.perState} a state with the most public repositories and followers (and everyone in Louisiana) had their contributions looked up, so very active people who work mostly in private can be missed. Each person's last 12 months of contributions came from GitHub's API. People are placed by what their profile says, and a two-letter code is checked against the places abroad that share it (MS is also Mato Grosso do Sul in Brazil, DE is Germany, IN is India); locations that stay ambiguous (Georgia the country, Washington DC) are left out, and so are accounts named as bots. It is a sample of each state's most visible GitHub users, not a census: ${fmt(D.candidates)} search results, ${fmt(D.fetched)} people looked up, ${fmt(D.P.length)} placed in a state.`;
 
+// ---------------------------------------------------------------- find yourself
+const REMEMBER = "github-leaderboard.me";
+const remembered = {
+  get() {
+    try {
+      return localStorage.getItem(REMEMBER);
+    } catch {
+      return null;
+    }
+  },
+  set(login) {
+    try {
+      if (login) localStorage.setItem(REMEMBER, login);
+      else localStorage.removeItem(REMEMBER);
+    } catch {}
+  },
+};
+const cleanLogin = (s) => (s ?? "").trim().replace(/^@/, "").replace(/^https?:\/\/github\.com\//i, "").replace(/\/.*$/, "");
+function setUrlMe(login) {
+  try {
+    const u = new URL(location.href);
+    if (login) u.searchParams.set("me", login);
+    else u.searchParams.delete("me");
+    history.replaceState(null, "", u);
+  } catch {}
+}
+function rerenderForMe() {
+  renderYou();
+  renderBoard();
+  renderTables();
+  renderMap();
+  renderSide();
+  fitHeight();
+  storm.sig = "";
+  $("#forget").hidden = !ME;
+}
+function notFound(login) {
+  const msg = $("#findmsg");
+  msg.textContent = "";
+  const near = [...BY_LOGIN.values()]
+    .filter((p) => p[F.login].toLowerCase().startsWith(login.toLowerCase().slice(0, 3)))
+    .sort((a, b) => b[F.total] - a[F.total])
+    .slice(0, 5);
+  msg.append(
+    `${login} is not on the leaderboard. People are counted when their GitHub profile location names a US state; in each state the ${D.perState} likeliest to be busiest (most public repositories and followers, among those who pushed code in the last year) are looked up, and in Louisiana everyone active. `,
+  );
+  if (near.length) {
+    msg.append("Did you mean ");
+    near.forEach((p, i) => {
+      const b = h("button", { type: "button", text: p[F.login] });
+      b.addEventListener("click", () => setMe(p[F.login], { open: true }));
+      msg.append(b, i < near.length - 1 ? ", " : "? ");
+    });
+  }
+  msg.append("Think you should be here? ", h("a", { href: "https://github.com/wbp318/github-leaderboard/issues/new/choose", text: "Tell us" }), ".");
+}
+// Show the ranks of a login; with open, also turn the tornado to their state.
+function setMe(input, { open = false } = {}) {
+  const login = cleanLogin(input);
+  const msg = $("#findmsg");
+  if (!login) {
+    ME = null;
+    remembered.set(null);
+    setUrlMe(null);
+    $("#me").value = "";
+    msg.textContent = "";
+    rerenderForMe();
+    return;
+  }
+  const found = BY_LOGIN.get(login.toLowerCase());
+  if (!found) {
+    notFound(login);
+    return;
+  }
+  ME = found;
+  remembered.set(found[F.login]);
+  setUrlMe(found[F.login]);
+  $("#me").value = found[F.login];
+  msg.textContent = "";
+  rerenderForMe();
+  if (open) go(`state:${found[F.state]}`);
+}
+$("#findme").addEventListener("submit", (e) => {
+  e.preventDefault();
+  setMe($("#me").value, { open: true });
+});
+$("#forget").addEventListener("click", () => setMe(""));
+{
+  const fromUrl = new URLSearchParams(location.search).get("me");
+  const start = BY_LOGIN.get(cleanLogin(fromUrl ?? remembered.get() ?? "").toLowerCase());
+  if (start) {
+    ME = start;
+    $("#me").value = start[F.login];
+    remembered.set(start[F.login]);
+  } else if (fromUrl) {
+    $("#me").value = cleanLogin(fromUrl);
+  }
+  $("#forget").hidden = !ME;
+}
+
 // ---------------------------------------------------------------- start
 buildViewSelect();
 buildLists();
@@ -956,6 +1072,10 @@ renderMap();
 if (COUNTED.length === D.states.length) $("#uncounted").remove();
 // A tornado of every state is tall; with many states, open on the divisions.
 go(COUNTED.length > 20 ? "us" : "all");
+{
+  const fromUrl = new URLSearchParams(location.search).get("me");
+  if (fromUrl && !ME) notFound(cleanLogin(fromUrl));
+}
 new ResizeObserver(resize).observe(cv);
 resize();
 let last = performance.now();
