@@ -36,6 +36,7 @@ watch(page, "desktop");
 await page.goto(url);
 await page.waitForTimeout(800);
 check((await page.title()).startsWith("GitHub Contribution Tornado"), "the page loads");
+check(/^Data refreshed .+ next refresh around/.test(await page.locator("#fresh").innerText()), "the top says when the data was refreshed and when it next will be");
 await page.locator("#cv").scrollIntoViewIfNeeded();
 await page.waitForTimeout(800);
 check((await lit(page)) > 1000, "the tornado draws");

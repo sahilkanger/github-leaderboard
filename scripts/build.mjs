@@ -107,7 +107,11 @@ const parishes = [...PARISHES, ""].map((name) => ({ name: name || "Parish not gi
 // Compact people: [login, name, state, total, commits, private, prs, reviews, issues, repos, followers, parish, fair, location]
 const P = people.map((p) => [p.login, p.name, p.state, p.total, p.commits, p.private, p.prs, p.reviews, p.issues, p.repos, p.followers, p.parish, p.fair ? 1 : 0, (p.location ?? "").trim()]);
 const me = people.find((p) => p.login === VIEWER) ?? null;
-const data = { generated: new Date().toISOString(), scopeName: SCOPE_NAME, perState: PER_STATE, compared: fair.length, viewer: VIEWER, me, us, regions, divisions, states, parishes, P, candidates: Object.values(cands).reduce((a, s) => a + s.logins.length, 0), fetched: Object.keys(users).length };
+// When the data was last fetched (the newest lookup), and the daily refresh's time from the workflow.
+const refreshed = Math.max(0, ...Object.values(users).map((u) => u?.at ?? 0)) || Date.now();
+const cron = readFileSync(new URL("../.github/workflows/refresh.yml", import.meta.url), "utf8").match(/cron:\s*"(\d+) (\d+) \* \* \*"/);
+const schedule = cron ? { hour: Number(cron[2]), minute: Number(cron[1]) } : null;
+const data = { generated: new Date().toISOString(), refreshed, schedule, scopeName: SCOPE_NAME, perState: PER_STATE, compared: fair.length, viewer: VIEWER, me, us, regions, divisions, states, parishes, P, candidates: Object.values(cands).reduce((a, s) => a + s.logins.length, 0), fetched: Object.keys(users).length };
 
 const tpl = readFileSync(new URL("../web/template.html", import.meta.url), "utf8");
 writeFileSync(new URL("../site/leaderboard.html", import.meta.url), tpl.replace("/*__DATA__*/null", () => JSON.stringify(data).replace(/</g, String.fromCharCode(92) + "x3c")));

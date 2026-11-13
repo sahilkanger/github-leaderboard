@@ -29,6 +29,9 @@ body { padding: 20px clamp(12px, 3vw, 32px) 40px; }
 a { color: #86b6ef; }
 header h1 { margin: 0; font-size: clamp(26px, 4vw, 40px); letter-spacing: 0.01em; }
 header p { margin: 4px 0 0; color: var(--muted); max-width: 980px; }
+header p.fresh { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 2px; padding: 4px 12px; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--panel); color: var(--ink); font-size: 13.5px; }
+header p.fresh::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #1baf7a; box-shadow: 0 0 6px #1baf7a; flex: none; }
 .repo { display: inline-block; margin-top: 8px; color: var(--gold); font-weight: 600; text-decoration: none; }
 .repo:hover { text-decoration: underline; }
 footer a { color: var(--gold); }
@@ -119,6 +122,7 @@ footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; max-width: 98
 <body>
 <header>
   <h1 id="title">GitHub Contribution Tornado</h1>
+  <p class="fresh" id="fresh"></p>
   <p id="sub"></p>
   <a class="repo" href="https://github.com/wbp318/github-leaderboard">Open source on GitHub: fix a placement, add a feature, star it ★</a>
 </header>
@@ -276,7 +280,24 @@ const rankOf = (scope, cat = "total") => {
 };
 
 // ---------------------------------------------------------------- header and your ranks
-$("#sub").textContent = `The last 12 months of GitHub contributions for ${fmt(D.P.length)} people whose profile places them in ${D.scopeName}. States, divisions and regions are compared on the same ${D.perState} a state (${fmt(D.compared)} people), the likeliest to be busiest; Louisiana's own view and its parishes count everyone active there. Private contributions count for people who show them on their profile. Collected ${D.generated.slice(0, 10)}.`;
+$("#sub").textContent = `The last 12 months of GitHub contributions for ${fmt(D.P.length)} people whose profile places them in ${D.scopeName}. States, divisions and regions are compared on the same ${D.perState} a state (${fmt(D.compared)} people), the likeliest to be busiest; Louisiana's own view and its parishes count everyone active there. Private contributions count for people who show them on their profile.`;
+// When the data was refreshed and when it next will be, in the visitor's own time; kept current while the page is open.
+function renderFresh() {
+  const at = new Date(D.refreshed);
+  const mins = Math.max(0, Math.round((Date.now() - at) / 60000));
+  const ago = mins < 1 ? "just now" : mins < 60 ? `${mins} minute${mins === 1 ? "" : "s"} ago` : mins < 48 * 60 ? `${Math.round(mins / 60)} hour${Math.round(mins / 60) === 1 ? "" : "s"} ago` : `${Math.round(mins / 1440)} days ago`;
+  const when = at.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  let next = "";
+  if (D.schedule) {
+    const n = new Date();
+    n.setUTCHours(D.schedule.hour, D.schedule.minute, 0, 0);
+    if (n <= Date.now()) n.setUTCDate(n.getUTCDate() + 1);
+    next = ` · next refresh around ${n.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" })}, daily`;
+  }
+  $("#fresh").textContent = `Data refreshed ${ago} (${when})${next}`;
+}
+renderFresh();
+setInterval(renderFresh, 60000);
 function renderYou() {
   const box = $("#you");
   box.textContent = "";
