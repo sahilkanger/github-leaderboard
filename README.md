@@ -10,6 +10,23 @@
 > - **macOS:** with [Homebrew](https://brew.sh), `brew install --cask ungoogled-chromium` (Chromium without Google's services). Homebrew's plain `chromium` package was retired in September 2026 because Apple's security check rejects it. If macOS will not open the app the first time, go to **System Settings → Privacy & Security** and choose **Open Anyway**. Homebrew does not update it on its own either: run `brew upgrade --cask ungoogled-chromium` now and then. Or use Google Chrome, which updates itself: `brew install --cask google-chrome`.
 > - **Linux:** `sudo snap install chromium` (snaps update themselves), or your distribution's `chromium` package.
 
+<details>
+<summary><b>Have Windows update Chromium every day</b></summary>
+
+Paste this into PowerShell once. It adds a task that runs `winget upgrade` for Chromium every morning at 9 (or as soon as the PC is next on), hidden, as you, with no administrator rights needed. The last run's output is in `%LOCALAPPDATA%\chromium-update.log`.
+
+```powershell
+$log = Join-Path $env:LOCALAPPDATA "chromium-update.log"
+$run = "winget upgrade --id Hibbiki.Chromium --exact --silent --accept-source-agreements --accept-package-agreements > `"$log`" 2>&1"
+Register-ScheduledTask -TaskName "Update Chromium" -Force `
+  -Action (New-ScheduledTaskAction -Execute "conhost.exe" -Argument "--headless cmd.exe /c $run") `
+  -Trigger (New-ScheduledTaskTrigger -Daily -At 9am) `
+  -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries)
+```
+
+To stop it: `Unregister-ScheduledTask -TaskName "Update Chromium"`.
+</details>
+
 A year of GitHub contributions across the United States, drawn as a spinning tornado: all 50 states, the nine Census divisions and four regions, Louisiana parish by parish, and leaderboards in eight categories. About 34,000 developers found, the likeliest-busiest 80 in each state compared, refreshed every day by GitHub Actions. One HTML file, no frameworks, no dependencies.
 
 **See it live: https://wbp318.github.io/github-leaderboard/** and type your GitHub login to see where you rank. Not on it? One click adds you.
