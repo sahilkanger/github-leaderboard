@@ -3,6 +3,13 @@
 [![Refresh and deploy](https://github.com/wbp318/github-leaderboard/actions/workflows/refresh.yml/badge.svg)](https://github.com/wbp318/github-leaderboard/actions/workflows/refresh.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+> [!TIP]
+> **Runs best in Chromium.** The tornado is a live canvas animation, and it is at its smoothest in Chromium and the browsers built on it (Chrome, Edge, Brave, Arc, Opera, Vivaldi). Firefox and Safari work too, just not as smoothly.
+>
+> - **Windows:** `winget install Hibbiki.Chromium`
+> - **macOS:** with [Homebrew](https://brew.sh), `brew install --cask ungoogled-chromium` (Chromium without Google's services). Homebrew's plain `chromium` package was retired in September 2026 because Apple's security check rejects it. If macOS will not open the app the first time, go to **System Settings → Privacy & Security** and choose **Open Anyway**. Or use Google Chrome: `brew install --cask google-chrome`.
+> - **Linux:** `sudo snap install chromium`, or your distribution's `chromium` package.
+
 A year of GitHub contributions across the United States, drawn as a spinning tornado: all 50 states, the nine Census divisions and four regions, Louisiana parish by parish, and leaderboards in eight categories. About 34,000 developers found, the likeliest-busiest 80 in each state compared, refreshed every day by GitHub Actions. One HTML file, no frameworks, no dependencies.
 
 **See it live: https://wbp318.github.io/github-leaderboard/** and type your GitHub login to see where you rank. Not on it? One click adds you.
