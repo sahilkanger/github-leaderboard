@@ -54,12 +54,23 @@ $env:GH_TOKEN = gh auth token; npm run collect      # PowerShell
 
 ## Ideas to pick up
 
-- **Find yourself.** Let a visitor type their login and see their ranks, not only the owner's.
-- **Counties.** Louisiana has parishes; do the same for your state's counties, following [src/parishes.mjs](src/parishes.mjs).
-- **History.** Keep a small daily total per state and draw how each state moves over time.
-- **A light theme**, following the page's colour tokens.
-- **More locations.** "Austin TX" (no comma) and "Atlanta, Ga" (lower case) are not placed today; place them without letting in "Tel Aviv IL".
-- **Accessibility.** A keyboard way through the tornado's rings.
+Each of these is an issue with what to build, where in the code, and how to know it is done. Comment on one to claim it.
+
+Good first issues:
+
+- [Find yourself: let any visitor see their own ranks](https://github.com/wbp318/github-leaderboard/issues/1)
+- [Links to a view: put the current view in the URL](https://github.com/wbp318/github-leaderboard/issues/2)
+- [Download a leaderboard as CSV](https://github.com/wbp318/github-leaderboard/issues/3)
+- [A light theme](https://github.com/wbp318/github-leaderboard/issues/4)
+- [Place "Austin TX" and "Atlanta, Ga"](https://github.com/wbp318/github-leaderboard/issues/5)
+
+Bigger ones:
+
+- [Keyboard and screen-reader access to the tornado](https://github.com/wbp318/github-leaderboard/issues/6)
+- [Counties for your state, like Louisiana's parishes](https://github.com/wbp318/github-leaderboard/issues/7)
+- [History: how each state moves over time](https://github.com/wbp318/github-leaderboard/issues/8)
+
+[All good first issues](https://github.com/wbp318/github-leaderboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). Have a different idea? [Open an issue](https://github.com/wbp318/github-leaderboard/issues/new/choose).
 
 ## Pull requests
 
