@@ -1,6 +1,8 @@
 # Every day: refresh the data from GitHub, audit where people were placed, rebuild the page, and
 # publish it to GitHub Pages. On a push to main it rebuilds from the latest data and publishes; on
-# a pull request it tests and builds without publishing.
+# a pull request it tests and builds without publishing. Every run checks the placement rules, the
+# scripts, the docs' links, and the workflows first, refuses to publish data that looks broken, and
+# opens the built page in a real browser before it can go live.
 #
 # The data lives on the `data` branch, one commit replaced each day, so history does not grow.
 # It uses the workflow's own token, so there is no secret to manage; that token's GraphQL budget
@@ -45,6 +47,14 @@ jobs:
       - name: Test the placement rules
         run: npm test
 
+      - name: Check the scripts and the docs' links
+        run: |
+          for f in scripts/*.mjs src/*.mjs e2e/*.mjs; do node --check "$f"; done
+          node scripts/check-links.mjs
+
+      - name: Lint the workflows
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+
       - name: Get the latest data
         run: |
           mkdir -p data
@@ -88,8 +98,20 @@ jobs:
           commit=$(git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com"             commit-tree "$tree" -m "Data as of $(date -u +%F)")
           git push --force origin "$commit:refs/heads/data"
 
+      # A bad day at GitHub's API must not replace the live page with a half-empty one.
+      - name: Check the data looks whole
+        env:
+          REQUIRE_FRESH_HOURS: ${{ env.COLLECT == 'true' && '30' || '' }}
+        run: node scripts/check-data.mjs
+
       - name: Build the page
         run: node scripts/build.mjs
+
+      - name: Test the page in a browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.0
+          npx playwright install --with-deps chromium
+          npm run e2e
 
       # GitHub turns off scheduled workflows in a repository with no activity for 60 days.
       - name: Keep the daily schedule on

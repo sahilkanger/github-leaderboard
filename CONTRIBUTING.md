@@ -29,6 +29,8 @@ Open `site/leaderboard.html` in a browser. Change [web/template.html](web/templa
 | [scripts/add-me.mjs](scripts/add-me.mjs) | Checks an "Add me" request and writes the bot's reply. |
 | [web/template.html](web/template.html) | The page: the canvas tornado, the map, the tables, all in one file. |
 | [test/states.test.mjs](test/states.test.mjs) | Locations and where they belong. |
+| [e2e/page.mjs](e2e/page.mjs) | Opens the built page in a browser and checks it works. |
+| [scripts/check-data.mjs](scripts/check-data.mjs), [scripts/check-links.mjs](scripts/check-links.mjs) | Refuse to publish broken data; catch broken doc links. |
 | [docs/placement.md](docs/placement.md) | How the placement rules work, and the audit. |
 | [docs/data.md](docs/data.md) | Every data file and field, and the collector's settings. |
 | [.github/workflows/refresh.yml](.github/workflows/refresh.yml) | The daily refresh and the deploy to GitHub Pages. |
@@ -77,7 +79,19 @@ Bigger ones:
 
 ## Pull requests
 
-CI runs the tests, the audit, and a full build on every pull request. Please keep it dependency-free and working at phone width.
+CI ([refresh.yml](.github/workflows/refresh.yml)) checks every pull request:
+
+| Check | Run it yourself |
+|---|---|
+| The placement rules | `npm test` |
+| Every script parses, and no doc links to a missing file | `npm run check:links` |
+| The workflows ([actionlint](https://github.com/rhysd/actionlint)) | `docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12` |
+| The data looks whole | `npm run check:data` |
+| A full build, then the page in a real browser: it loads, the tornado draws, Find yourself and "where you'd rank" work, nothing scrolls sideways on a phone, no script errors | `npm run build && npm run e2e` |
+
+The browser test needs Playwright, which is deliberately not a dependency: install it once with `npm i --no-save --no-package-lock playwright && npx playwright install chromium`. Please keep the project dependency-free and working at phone width.
+
+[Dependabot](.github/dependabot.yml) keeps the workflows' actions up to date, and CodeQL scans the code.
 
 ## Leaving the leaderboard
 

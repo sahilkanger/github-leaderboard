@@ -12,7 +12,10 @@
     "collect": "node scripts/collect.mjs",
     "audit": "node scripts/audit.mjs",
     "build": "node scripts/build.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "e2e": "node e2e/page.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "check:data": "node scripts/check-data.mjs"
   },
   "repository": {
     "type": "git",
